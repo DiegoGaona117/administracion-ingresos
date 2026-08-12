@@ -35,17 +35,26 @@
   h1{ font-size:26px; font-weight:800; margin:0 0 18px; letter-spacing:-0.02em; }
 
   .summary-card.single{
-    background:var(--card); border-radius:18px; padding:22px 20px; margin-bottom:22px;
-    display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;
+    background:var(--card); border-radius:18px; padding:20px; margin-bottom:22px;
+    display:grid; grid-template-columns:2fr 1fr; align-items:center; gap:14px;
   }
-  .summary-card.single .lbl{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
-  .summary-card.single .num{font-size:34px; font-weight:800; letter-spacing:-0.02em;}
-  .total-row{ display:flex; align-items:center; gap:10px; }
-  .total-face{ width:30px; height:30px; transition:transform .25s ease; }
+  .summary-left{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .summary-left .lbl{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+  .summary-left .num{font-size:32px; font-weight:800; letter-spacing:-0.02em;}
+
+  .summary-right{
+    display:flex; align-items:center; justify-content:center;
+    aspect-ratio:1/1; width:100%;
+  }
+  .total-face{ width:100%; height:100%; object-fit:contain; transition:transform .25s ease; }
+  .total-face-fallback{
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px; line-height:1;
+  }
 
   .drain-track{
-    width:100%; max-width:260px; height:10px; background:var(--ring-bg);
-    border-radius:6px; overflow:hidden; margin-top:12px;
+    width:100%; height:10px; background:var(--ring-bg);
+    border-radius:6px; overflow:hidden; margin-top:10px;
   }
   .drain-fill{
     height:100%; width:100%; background:var(--green); border-radius:6px;
@@ -175,15 +184,18 @@
   </header>
 
   <div class="summary-card single">
-    <span class="lbl">Total en apartados</span>
-    <div class="total-row">
+    <div class="summary-left">
+      <span class="lbl">Total en apartados</span>
       <span class="num" id="valTotalApartados">$0</span>
-      <img class="total-face" id="totalFace" src="" alt="estado de tu presupuesto">
+      <div class="drain-track">
+        <div class="drain-fill" id="drainFill"></div>
+      </div>
+      <span class="drain-caption" id="drainCaption">Disponible: 100%</span>
     </div>
-    <div class="drain-track">
-      <div class="drain-fill" id="drainFill"></div>
+    <div class="summary-right">
+      <img class="total-face" id="totalFaceImg" src="" alt="estado de tu presupuesto">
+      <span class="total-face total-face-fallback" id="totalFaceEmoji" style="display:none;"></span>
     </div>
-    <span class="drain-caption" id="drainCaption">Disponible: 100%</span>
   </div>
 
   <div class="section-title">
@@ -243,14 +255,18 @@
   const EMOJIS = ['🛒','🚗','🏠','💡','📶','🧴','🐾','👕','💊','🎬','☕','📚','🎁','💳','🐱','🐶','🍔','🎓','🔧','💰'];
 
   // Imágenes de la carita del total. Puedes reemplazar cada URL por la tuya.
-  const TW = 'https://static.wixstatic.com/media/';
+  const TW = 'https://static.wixstatic.com/media/32c95b_';
   const FACE_IMAGES = {
-    feliz:       TW + '32c95b_4ed6bfceaa544237b409a6b73aaec9a3~mv2.png', // 😄
-    contento:    TW + '32c95b_ccbbffa56ceb4977aadb07350b9bfcf6~mv2.png', // 🙂
-    neutral:     TW + '1f610.png', // 😐
-    preocupado:  TW + '1f61f.png', // 😟
-    triste:      TW + '1f622.png', // 😢
-    llorando:    TW + '1f62d.png'  // 😭
+    feliz:       TW + '4ed6bfceaa544237b409a6b73aaec9a3~mv2.png', // 😄
+    contento:    TW + 'ccbbffa56ceb4977aadb07350b9bfcf6~mv2.png', // 🙂
+    neutral:     TW + 'bd50517d83094256a886ae5e372c3db7~mv2.png', // 😐
+    preocupado:  TW + '1d849616ad764b1793ce75729638229c~mv2.png', // 😟
+    triste:      TW + '5ee6bdf8953d43a083c5aa7696b22664~mv2.png', // 😢
+    llorando:    TW + '4f3ec5e7a45c491786fd748bb1d7140d~mv2.png'  // 😭
+  };
+  // Respaldo en emoji de texto por si la imagen no llega a cargar
+  const FACE_FALLBACK = {
+    feliz:'😄', contento:'🙂', neutral:'😐', preocupado:'😟', triste:'😢', llorando:'😭'
   };
 
   const fmt = n => '$' + (Math.round((n||0)*100)/100).toLocaleString('es-MX',{minimumFractionDigits:0, maximumFractionDigits:2});
@@ -322,13 +338,13 @@
     const t = Math.min(1, (37.5 - pct) / 37.5);
     return lerpColor(COLOR_GOLD, COLOR_RED, t);
   }
-  function faceForPct(pct){
-    if(pct >= 80) return FACE_IMAGES.feliz;
-    if(pct >= 60) return FACE_IMAGES.contento;
-    if(pct >= 40) return FACE_IMAGES.neutral;
-    if(pct >= 20) return FACE_IMAGES.preocupado;
-    if(pct > 0)   return FACE_IMAGES.triste;
-    return FACE_IMAGES.llorando;
+  function faceKeyForPct(pct){
+    if(pct >= 80) return 'feliz';
+    if(pct >= 60) return 'contento';
+    if(pct >= 40) return 'neutral';
+    if(pct >= 20) return 'preocupado';
+    if(pct >= 10)   return 'triste';
+    return 'llorando';
   }
 
   function render(){
@@ -350,7 +366,17 @@
     document.getElementById('drainCaption').textContent =
       totalApartados > 0 ? `Disponible: ${Math.round(pctDisponible)}%` : 'Sin presupuestos asignados';
 
-    document.getElementById('totalFace').src = faceForPct(totalApartados > 0 ? pctDisponible : 100);
+    const faceKey = faceKeyForPct(totalApartados > 0 ? pctDisponible : 100);
+    const faceImg = document.getElementById('totalFaceImg');
+    const faceEmoji = document.getElementById('totalFaceEmoji');
+    faceImg.style.display = '';
+    faceEmoji.style.display = 'none';
+    faceImg.onerror = ()=>{
+      faceImg.style.display = 'none';
+      faceEmoji.style.display = 'flex';
+      faceEmoji.textContent = FACE_FALLBACK[faceKey];
+    };
+    faceImg.src = FACE_IMAGES[faceKey];
 
     const list = document.getElementById('list');
     list.innerHTML = '';
