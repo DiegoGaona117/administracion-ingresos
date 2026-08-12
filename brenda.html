@@ -242,6 +242,17 @@
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const EMOJIS = ['🛒','🚗','🏠','💡','📶','🧴','🐾','👕','💊','🎬','☕','📚','🎁','💳','🐱','🐶','🍔','🎓','🔧','💰'];
 
+  // Imágenes de la carita del total. Puedes reemplazar cada URL por la tuya.
+  const TW = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/';
+  const FACE_IMAGES = {
+    feliz:       TW + '1f604.png', // 😄
+    contento:    TW + '1f642.png', // 🙂
+    neutral:     TW + '1f610.png', // 😐
+    preocupado:  TW + '1f61f.png', // 😟
+    triste:      TW + '1f622.png', // 😢
+    llorando:    TW + '1f62d.png'  // 😭
+  };
+
   const fmt = n => '$' + (Math.round((n||0)*100)/100).toLocaleString('es-MX',{minimumFractionDigits:0, maximumFractionDigits:2});
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 
@@ -339,7 +350,7 @@
     document.getElementById('drainCaption').textContent =
       totalApartados > 0 ? `Disponible: ${Math.round(pctDisponible)}%` : 'Sin presupuestos asignados';
 
-    document.getElementById('totalFace').textContent = faceForPct(totalApartados > 0 ? pctDisponible : 100);
+    document.getElementById('totalFace').src = faceForPct(totalApartados > 0 ? pctDisponible : 100);
 
     const list = document.getElementById('list');
     list.innerHTML = '';
