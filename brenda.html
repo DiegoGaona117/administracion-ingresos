@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Categorías · Presupuesto mensual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --ink:#111318;
+    --ink-soft:#8A8F98;
+    --line:#EEEFF2;
+    --card:#F7F7F9;
+    --blue:#4E5BF2;
+    --blue-soft:#EEF0FE;
+    --green:#1FA971;
+    --gold:#D79A1F;
+    --red:#E5533D;
+    --ring-bg:#E7E8EE;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:22px 18px 90px;}
+
+  /* header */
+  header{ margin-bottom:6px; }
+  .eyebrow{ font-size:13px; color:var(--ink-soft); font-weight:600; margin:0 0 2px; }
+  h1{ font-size:26px; font-weight:800; margin:0 0 18px; letter-spacing:-0.02em; }
+
+  .summary-card{
+    background:var(--card); border-radius:18px; padding:18px 20px; margin-bottom:22px;
+    display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .summary-card .item{display:flex; flex-direction:column; gap:2px;}
+  .summary-card .item .lbl{font-size:11.5px; color:var(--ink-soft); font-weight:600;}
+  .summary-card .item .num{font-size:19px; font-weight:800;}
+  .summary-card .item .num.neg{color:var(--red);}
+  .summary-card .item input{
+    font-size:19px; font-weight:800; border:none; background:transparent; color:var(--ink);
+    width:90px; padding:0; border-bottom:1.5px dashed var(--line);
+  }
+  .summary-card .item input:focus{outline:none; border-bottom-color:var(--blue);}
+  .summary-card .divider{width:1px; align-self:stretch; background:var(--line);}
+
+  .section-title{
+    display:flex; justify-content:space-between; align-items:center; margin:26px 0 10px;
+  }
+  .section-title h2{font-size:15px; font-weight:700; margin:0;}
+  .section-title button{
+    border:none; background:var(--blue-soft); color:var(--blue); font-weight:700; font-size:13px;
+    padding:7px 13px; border-radius:20px; cursor:pointer;
+  }
+  .section-title button:active{opacity:.8;}
+
+  /* rows */
+  .list{ display:flex; flex-direction:column; }
+  .row{
+    display:flex; align-items:center; gap:14px;
+    padding:13px 4px; border-bottom:1px solid var(--line);
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .row:last-child{border-bottom:none;}
+
+  .ring-wrap{ position:relative; width:52px; height:52px; flex:0 0 52px; }
+  .ring-wrap svg{ position:absolute; inset:0; transform:rotate(-90deg); }
+  .ring-wrap svg circle{ fill:none; stroke-width:3.5; }
+  .ring-bg{ stroke:var(--ring-bg); }
+  .ring-fill{ stroke:var(--green); stroke-linecap:round; transition:stroke-dashoffset .4s ease, stroke .3s ease; }
+  .row.warn .ring-fill{ stroke:var(--gold); }
+  .row.over .ring-fill{ stroke:var(--red); }
+  .icon-emoji{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+  }
+
+  .row-mid{ flex:1; min-width:0; }
+  .row-name{ font-size:15.5px; font-weight:700; margin-bottom:2px; }
+  .row-sub{ font-size:12.5px; color:var(--ink-soft); }
+  .row-sub.over{ color:var(--red); font-weight:600; }
+
+  .row-right{ text-align:right; flex-shrink:0; }
+  .row-amt{ font-size:16px; font-weight:800; }
+  .row-amt.over{ color:var(--red); }
+  .row-budget{ font-size:11.5px; color:var(--ink-soft); }
+
+  .empty-state{
+    text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:14px;
+    border:1.5px dashed var(--line); border-radius:16px;
+  }
+
+  /* expanded detail */
+  .detail{
+    display:none; padding:6px 4px 16px 66px; border-bottom:1px solid var(--line);
+  }
+  .detail.open{ display:block; }
+  .detail-actions{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .chip-btn{
+    border:none; border-radius:20px; padding:8px 14px; font-size:12.5px; font-weight:700;
+    cursor:pointer;
+  }
+  .chip-btn.primary{ background:var(--blue); color:#fff; }
+  .chip-btn.ghost{ background:var(--card); color:var(--ink); }
+  .chip-btn.danger{ background:#FDEDEB; color:var(--red); }
+
+  .tx-row{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:6px 0; font-size:13px;
+  }
+  .tx-desc{ color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tx-date{ color:var(--ink-soft); font-size:11px; }
+  .tx-amt{ font-weight:700; flex-shrink:0; }
+  .tx-del{ border:none; background:none; color:var(--ink-soft); font-size:13px; cursor:pointer; flex-shrink:0; }
+  .tx-del:hover{ color:var(--red); }
+  .tx-empty{ color:var(--ink-soft); font-size:12.5px; font-style:italic; padding:4px 0; }
+
+  /* modal */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(17,19,24,0.4);
+    display:none; align-items:flex-end; justify-content:center; z-index:50;
+  }
+  .modal-bg.open{ display:flex; }
+  .modal{
+    background:#fff; width:100%; max-width:520px; border-radius:22px 22px 0 0;
+    padding:24px 22px 30px; animation:slideUp .22s ease;
+  }
+  @keyframes slideUp{ from{transform:translateY(16px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+  .modal h2{ font-size:19px; font-weight:800; margin:0 0 3px; }
+  .modal .sub{ font-size:12.5px; color:var(--ink-soft); margin:0 0 18px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; }
+  .field input{
+    width:100%; border:1.5px solid var(--line); border-radius:12px; padding:11px 13px;
+    font-family:'Inter',sans-serif; font-size:15px; background:var(--card); color:var(--ink);
+  }
+  .field input:focus{ outline:none; border-color:var(--blue); }
+  .field.amount input{ font-size:19px; font-weight:800; }
+  .emoji-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .emoji-opt{
+    width:38px; height:38px; border-radius:10px; border:1.5px solid var(--line); background:var(--card);
+    font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .emoji-opt.sel{ border-color:var(--blue); background:var(--blue-soft); }
+  .modal-actions{ display:flex; gap:10px; margin-top:20px; }
+  .btn{
+    flex:1; border:none; border-radius:12px; padding:13px; font-size:14.5px; font-weight:700; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn.primary{ background:var(--blue); color:#fff; }
+  .btn.ghost{ background:var(--card); color:var(--ink); }
+
+  footer{ text-align:center; color:var(--ink-soft); font-size:11.5px; margin-top:30px; }
+
+  @media (max-width:380px){
+    .detail{ padding-left:4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow" id="mesLabel">Agosto 2026</p>
+    <h1>Presupuesto del mes</h1>
+  </header>
+
+  <div class="summary-card">
+    <div class="item">
+      <span class="lbl">Ingreso</span>
+      <span class="num">$<input type="number" id="inputIngreso" min="0" step="1" placeholder="0"></span>
+    </div>
+    <div class="divider"></div>
+    <div class="item">
+      <span class="lbl">Gastado</span>
+      <span class="num" id="valGastado">$0</span>
+    </div>
+    <div class="divider"></div>
+    <div class="item">
+      <span class="lbl">Disponible</span>
+      <span class="num" id="valDisponible">$0</span>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <h2>Tus categorías</h2>
+    <button id="btnNuevaCategoria">+ Categoría</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <footer>Guardado solo en este navegador (localStorage) · <span id="btnResetMes" style="text-decoration:underline; cursor:pointer;">cerrar mes</span></footer>
+</div>
+
+<!-- Modal: nueva/editar categoría -->
+<div class="modal-bg" id="modalCategoria">
+  <div class="modal">
+    <h2 id="catModalTitle">Nueva categoría</h2>
+    <p class="sub">Ej. Comida, Transporte, Servicios (agua/luz/internet)</p>
+    <div class="field">
+      <label>Ícono</label>
+      <div class="emoji-row" id="emojiRow"></div>
+    </div>
+    <div class="field">
+      <label for="catNombre">Nombre</label>
+      <input type="text" id="catNombre" placeholder="Comida" maxlength="30">
+    </div>
+    <div class="field amount">
+      <label for="catBudget">Presupuesto este mes</label>
+      <input type="number" id="catBudget" placeholder="2000" min="0" step="1">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="catCancel">Cancelar</button>
+      <button class="btn primary" id="catGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nuevo gasto -->
+<div class="modal-bg" id="modalGasto">
+  <div class="modal">
+    <h2>Registrar gasto</h2>
+    <p class="sub" id="gastoCatNombre">Categoría</p>
+    <div class="field amount">
+      <label for="gastoMonto">Monto gastado</label>
+      <input type="number" id="gastoMonto" placeholder="200" min="0" step="1">
+    </div>
+    <div class="field">
+      <label for="gastoDesc">Descripción (opcional)</label>
+      <input type="text" id="gastoDesc" placeholder="Súper, tienda de la esquina..." maxlength="60">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="gastoCancel">Cancelar</button>
+      <button class="btn primary" id="gastoGuardar">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'presupuestoMensual_v2';
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const EMOJIS = ['🛒','🚗','🏠','💡','📶','🧴','🐾','👕','💊','🎬','☕','📚','🎁','💳','🐱','🐶','🍔','🎓','🔧','💰'];
+
+  const fmt = n => '$' + (Math.round((n||0)*100)/100).toLocaleString('es-MX',{minimumFractionDigits:0, maximumFractionDigits:2});
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+
+  function currentMonthKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function defaultData(){
+    return {
+      month: currentMonthKey(),
+      income: 0,
+      categories: [
+        {id: uid(), name:'Comida', icon:'🛒', budget:2000, transactions:[]},
+        {id: uid(), name:'Transporte', icon:'🚗', budget:800, transactions:[]},
+        {id: uid(), name:'Servicios (agua/luz/internet)', icon:'💡', budget:1200, transactions:[]},
+        {id: uid(), name:'Mantenimiento', icon:'🔧', budget:500, transactions:[]},
+      ]
+    };
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultData();
+      const data = JSON.parse(raw);
+      if(!data.categories) return defaultData();
+      data.categories.forEach(c=>{ if(!c.icon) c.icon = '💰'; });
+      return data;
+    }catch(e){
+      console.error('Error leyendo localStorage', e);
+      return defaultData();
+    }
+  }
+
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){
+      console.error('Error guardando en localStorage', e);
+      alert('No se pudo guardar. Puede que el almacenamiento local esté lleno o bloqueado.');
+    }
+  }
+
+  let state = load();
+  let openId = null; // categoría expandida actualmente
+
+  function monthLabel(monthKey){
+    const [y,m] = monthKey.split('-').map(Number);
+    return MESES[m-1] + ' ' + y;
+  }
+  function catSpent(cat){ return cat.transactions.reduce((s,t)=>s+t.amount,0); }
+  function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+  function render(){
+    document.getElementById('mesLabel').textContent = monthLabel(state.month).replace(/^./,c=>c.toUpperCase());
+    document.getElementById('inputIngreso').value = state.income || '';
+
+    const totalSpent = state.categories.reduce((s,c)=>s+catSpent(c),0);
+    const disponible = (state.income||0) - totalSpent;
+
+    document.getElementById('valGastado').textContent = fmt(totalSpent);
+    const dispEl = document.getElementById('valDisponible');
+    dispEl.textContent = fmt(disponible);
+    dispEl.classList.toggle('neg', disponible < 0);
+
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+
+    if(state.categories.length === 0){
+      const div = document.createElement('div');
+      div.className = 'empty-state';
+      div.textContent = 'Aún no tienes categorías. Crea la primera con "+ Categoría".';
+      list.appendChild(div);
+      return;
+    }
+
+    state.categories.forEach(cat => list.appendChild(renderRow(cat)));
+  }
+
+  function renderRow(cat){
+    const spent = catSpent(cat);
+    const budget = Number(cat.budget)||0;
+    const remaining = budget - spent;
+    const pct = budget > 0 ? Math.min(1, spent/budget) : (spent>0?1:0);
+
+    const r = 22; const circumference = 2*Math.PI*r;
+    const dashoffset = circumference * (1-pct);
+
+    const wrapper = document.createElement('div');
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    if(remaining < 0) row.classList.add('over');
+    else if(budget>0 && pct >= 0.8) row.classList.add('warn');
+
+    const subText = remaining >= 0
+      ? `Quedan ${fmt(remaining)} de ${fmt(budget)}`
+      : `Excediste tu presupuesto por ${fmt(Math.abs(remaining))}`;
+
+    row.innerHTML = `
+      <div class="ring-wrap">
+        <svg width="52" height="52" viewBox="0 0 52 52">
+          <circle class="ring-bg" cx="26" cy="26" r="${r}"></circle>
+          <circle class="ring-fill" cx="26" cy="26" r="${r}"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${dashoffset}"></circle>
+        </svg>
+        <div class="icon-emoji">${cat.icon}</div>
+      </div>
+      <div class="row-mid">
+        <div class="row-name">${escapeHtml(cat.name)}</div>
+        <div class="row-sub ${remaining<0?'over':''}">${subText}</div>
+      </div>
+      <div class="row-right">
+        <div class="row-amt ${remaining<0?'over':''}">${fmt(Math.max(remaining,0))}</div>
+        <div class="row-budget">disponible</div>
+      </div>
+    `;
+    row.addEventListener('click', ()=>{
+      openId = (openId === cat.id) ? null : cat.id;
+      render();
+    });
+    wrapper.appendChild(row);
+
+    if(openId === cat.id){
+      const detail = document.createElement('div');
+      detail.className = 'detail open';
+      detail.innerHTML = `
+        <div class="detail-actions">
+          <button class="chip-btn primary" data-act="gasto">+ Registrar gasto</button>
+          <button class="chip-btn ghost" data-act="editar">Editar</button>
+          <button class="chip-btn danger" data-act="eliminar">Eliminar</button>
+        </div>
+        <div class="tx-wrap"></div>
+      `;
+      detail.addEventListener('click', (e)=>e.stopPropagation());
+      detail.querySelector('[data-act="gasto"]').addEventListener('click', ()=>openGastoModal(cat.id));
+      detail.querySelector('[data-act="editar"]').addEventListener('click', ()=>openCategoriaModal(cat.id));
+      detail.querySelector('[data-act="eliminar"]').addEventListener('click', ()=>deleteCategory(cat.id));
+
+      const txWrap = detail.querySelector('.tx-wrap');
+      if(cat.transactions.length===0){
+        txWrap.innerHTML = '<div class="tx-empty">Sin movimientos todavía</div>';
+      }else{
+        txWrap.innerHTML = [...cat.transactions].reverse().map(t=>`
+          <div class="tx-row">
+            <div style="overflow:hidden;">
+              <div class="tx-desc">${escapeHtml(t.desc || 'Gasto')}</div>
+              <div class="tx-date">${t.date}</div>
+            </div>
+            <span class="tx-amt">-${fmt(t.amount)}</span>
+            <button class="tx-del" data-tx="${t.id}">✕</button>
+          </div>
+        `).join('');
+        txWrap.querySelectorAll('.tx-del').forEach(btn=>{
+          btn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            const txId = e.target.getAttribute('data-tx');
+            cat.transactions = cat.transactions.filter(t=>t.id!==txId);
+            save(); render();
+          });
+        });
+      }
+      wrapper.appendChild(detail);
+    }
+
+    return wrapper;
+  }
+
+  function deleteCategory(id){
+    const cat = state.categories.find(c=>c.id===id);
+    if(!cat) return;
+    if(confirm(`¿Eliminar la categoría "${cat.name}" y todo su historial? Esta acción no se puede deshacer.`)){
+      state.categories = state.categories.filter(c=>c.id!==id);
+      openId = null;
+      save(); render();
+    }
+  }
+
+  // ---------- modal: categoria (crear / editar) ----------
+  const modalCategoria = document.getElementById('modalCategoria');
+  let editingCatId = null;
+  let selectedEmoji = EMOJIS[0];
+
+  function buildEmojiRow(){
+    const row = document.getElementById('emojiRow');
+    row.innerHTML = '';
+    EMOJIS.forEach(em=>{
+      const btn = document.createElement('div');
+      btn.className = 'emoji-opt' + (em===selectedEmoji ? ' sel' : '');
+      btn.textContent = em;
+      btn.addEventListener('click', ()=>{ selectedEmoji = em; buildEmojiRow(); });
+      row.appendChild(btn);
+    });
+  }
+
+  function openCategoriaModal(catId){
+    editingCatId = catId || null;
+    const cat = catId ? state.categories.find(c=>c.id===catId) : null;
+    document.getElementById('catModalTitle').textContent = cat ? 'Editar categoría' : 'Nueva categoría';
+    document.getElementById('catNombre').value = cat ? cat.name : '';
+    document.getElementById('catBudget').value = cat ? cat.budget : '';
+    selectedEmoji = cat ? cat.icon : EMOJIS[0];
+    buildEmojiRow();
+    modalCategoria.classList.add('open');
+    document.getElementById('catNombre').focus();
+  }
+  function closeCategoriaModal(){ modalCategoria.classList.remove('open'); editingCatId=null; }
+
+  document.getElementById('btnNuevaCategoria').addEventListener('click', ()=>openCategoriaModal(null));
+  document.getElementById('catCancel').addEventListener('click', closeCategoriaModal);
+  modalCategoria.addEventListener('click', (e)=>{ if(e.target===modalCategoria) closeCategoriaModal(); });
+  document.getElementById('catGuardar').addEventListener('click', ()=>{
+    const name = document.getElementById('catNombre').value.trim();
+    const budget = Math.max(0, Number(document.getElementById('catBudget').value)||0);
+    if(!name){ alert('Ponle un nombre a la categoría.'); return; }
+    if(editingCatId){
+      const cat = state.categories.find(c=>c.id===editingCatId);
+      cat.name = name.slice(0,30); cat.budget = budget; cat.icon = selectedEmoji;
+    }else{
+      state.categories.push({id:uid(), name:name.slice(0,30), icon:selectedEmoji, budget, transactions:[]});
+    }
+    save(); render(); closeCategoriaModal();
+  });
+
+  // ---------- modal: gasto ----------
+  const modalGasto = document.getElementById('modalGasto');
+  let gastoCatId = null;
+  function openGastoModal(catId){
+    gastoCatId = catId;
+    const cat = state.categories.find(c=>c.id===catId);
+    document.getElementById('gastoCatNombre').textContent = cat ? cat.name : '';
+    document.getElementById('gastoMonto').value = '';
+    document.getElementById('gastoDesc').value = '';
+    modalGasto.classList.add('open');
+    document.getElementById('gastoMonto').focus();
+  }
+  function closeGastoModal(){ modalGasto.classList.remove('open'); gastoCatId=null; }
+
+  document.getElementById('gastoCancel').addEventListener('click', closeGastoModal);
+  modalGasto.addEventListener('click', (e)=>{ if(e.target===modalGasto) closeGastoModal(); });
+  document.getElementById('gastoGuardar').addEventListener('click', ()=>{
+    const cat = state.categories.find(c=>c.id===gastoCatId);
+    if(!cat) return;
+    const monto = Number(document.getElementById('gastoMonto').value);
+    if(!monto || monto<=0){ alert('Escribe un monto válido.'); return; }
+    const desc = document.getElementById('gastoDesc').value.trim();
+    const today = new Date();
+    const dateStr = String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0');
+    cat.transactions.push({id:uid(), amount:monto, desc, date:dateStr});
+    openId = cat.id;
+    save(); render(); closeGastoModal();
+  });
+
+  // ---------- ingreso ----------
+  document.getElementById('inputIngreso').addEventListener('change', (e)=>{
+    state.income = Math.max(0, Number(e.target.value)||0);
+    save(); render();
+  });
+
+  // ---------- cerrar mes ----------
+  document.getElementById('btnResetMes').addEventListener('click', ()=>{
+    if(!confirm('Esto guarda tus presupuestos pero borra todos los movimientos registrados, para empezar un mes nuevo. ¿Continuar?')) return;
+    state.month = currentMonthKey();
+    state.categories.forEach(c => c.transactions = []);
+    openId = null;
+    save(); render();
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape'){ closeCategoriaModal(); closeGastoModal(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
