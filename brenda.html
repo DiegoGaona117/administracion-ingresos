@@ -40,6 +40,18 @@
   }
   .summary-card.single .lbl{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
   .summary-card.single .num{font-size:34px; font-weight:800; letter-spacing:-0.02em;}
+  .total-row{ display:flex; align-items:center; gap:10px; }
+  .total-face{ width:30px; height:30px; transition:transform .25s ease; }
+
+  .drain-track{
+    width:100%; max-width:260px; height:10px; background:var(--ring-bg);
+    border-radius:6px; overflow:hidden; margin-top:12px;
+  }
+  .drain-fill{
+    height:100%; width:100%; background:var(--green); border-radius:6px;
+    transition:width .4s ease, background .5s ease;
+  }
+  .drain-caption{ font-size:11.5px; color:var(--ink-soft); font-weight:600; margin-top:6px; }
 
   .section-title{
     display:flex; justify-content:space-between; align-items:center; margin:26px 0 10px;
@@ -164,7 +176,14 @@
 
   <div class="summary-card single">
     <span class="lbl">Total en apartados</span>
-    <span class="num" id="valTotalApartados">$0</span>
+    <div class="total-row">
+      <span class="num" id="valTotalApartados">$0</span>
+      <img class="total-face" id="totalFace" src="" alt="estado de tu presupuesto">
+    </div>
+    <div class="drain-track">
+      <div class="drain-fill" id="drainFill"></div>
+    </div>
+    <span class="drain-caption" id="drainCaption">Disponible: 100%</span>
   </div>
 
   <div class="section-title">
@@ -208,11 +227,7 @@
     <p class="sub" id="gastoCatNombre">Categoría</p>
     <div class="field amount">
       <label for="gastoMonto">Monto gastado</label>
-      <input type="number" id="gastoMonto" placeholder="200" min="0" step="1">
-    </div>
-    <div class="field">
-      <label for="gastoDesc">Descripción (opcional)</label>
-      <input type="text" id="gastoDesc" placeholder="Súper, tienda de la esquina..." maxlength="60">
+      <input type="number" id="gastoMonto" placeholder="200" min="0" step="1" inputmode="decimal">
     </div>
     <div class="modal-actions">
       <button class="btn ghost" id="gastoCancel">Cancelar</button>
@@ -280,11 +295,51 @@
   function catSpent(cat){ return cat.transactions.reduce((s,t)=>s+t.amount,0); }
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
 
+  // ---------- color gradual de la barra (verde -> dorado -> rojo por debajo de 75%) ----------
+  const COLOR_GREEN = [31,169,113];   // --green
+  const COLOR_GOLD  = [215,154,31];   // --gold
+  const COLOR_RED   = [229,83,61];    // --red
+  function lerpColor(c1, c2, t){
+    return [0,1,2].map(i => Math.round(c1[i] + (c2[i]-c1[i]) * t));
+  }
+  function drainColor(pct){
+    if(pct >= 75) return COLOR_GREEN;
+    if(pct >= 37.5){
+      const t = (75 - pct) / (75 - 37.5);
+      return lerpColor(COLOR_GREEN, COLOR_GOLD, t);
+    }
+    const t = Math.min(1, (37.5 - pct) / 37.5);
+    return lerpColor(COLOR_GOLD, COLOR_RED, t);
+  }
+  function faceForPct(pct){
+    if(pct >= 80) return FACE_IMAGES.feliz;
+    if(pct >= 60) return FACE_IMAGES.contento;
+    if(pct >= 40) return FACE_IMAGES.neutral;
+    if(pct >= 20) return FACE_IMAGES.preocupado;
+    if(pct > 0)   return FACE_IMAGES.triste;
+    return FACE_IMAGES.llorando;
+  }
+
   function render(){
     document.getElementById('mesLabel').textContent = monthLabel(state.month).replace(/^./,c=>c.toUpperCase());
 
     const totalApartados = state.categories.reduce((s,c)=>s+(Number(c.budget)||0),0);
     document.getElementById('valTotalApartados').textContent = fmt(totalApartados);
+
+    const totalSpent = state.categories.reduce((s,c)=>s+catSpent(c),0);
+    const pctDisponible = totalApartados > 0
+      ? Math.max(0, Math.min(100, ((totalApartados-totalSpent)/totalApartados)*100))
+      : 100;
+
+    const drainFill = document.getElementById('drainFill');
+    drainFill.style.width = pctDisponible + '%';
+    const [r,g,b] = drainColor(pctDisponible);
+    drainFill.style.background = `rgb(${r},${g},${b})`;
+
+    document.getElementById('drainCaption').textContent =
+      totalApartados > 0 ? `Disponible: ${Math.round(pctDisponible)}%` : 'Sin presupuestos asignados';
+
+    document.getElementById('totalFace').textContent = faceForPct(totalApartados > 0 ? pctDisponible : 100);
 
     const list = document.getElementById('list');
     list.innerHTML = '';
@@ -366,10 +421,7 @@
       }else{
         txWrap.innerHTML = [...cat.transactions].reverse().map(t=>`
           <div class="tx-row">
-            <div style="overflow:hidden;">
-              <div class="tx-desc">${escapeHtml(t.desc || 'Gasto')}</div>
-              <div class="tx-date">${t.date}</div>
-            </div>
+            <div class="tx-date">${t.date}</div>
             <span class="tx-amt">-${fmt(t.amount)}</span>
             <button class="tx-del" data-tx="${t.id}">✕</button>
           </div>
@@ -453,7 +505,6 @@
     const cat = state.categories.find(c=>c.id===catId);
     document.getElementById('gastoCatNombre').textContent = cat ? cat.name : '';
     document.getElementById('gastoMonto').value = '';
-    document.getElementById('gastoDesc').value = '';
     modalGasto.classList.add('open');
     document.getElementById('gastoMonto').focus();
   }
@@ -466,10 +517,9 @@
     if(!cat) return;
     const monto = Number(document.getElementById('gastoMonto').value);
     if(!monto || monto<=0){ alert('Escribe un monto válido.'); return; }
-    const desc = document.getElementById('gastoDesc').value.trim();
     const today = new Date();
     const dateStr = String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0');
-    cat.transactions.push({id:uid(), amount:monto, desc, date:dateStr});
+    cat.transactions.push({id:uid(), amount:monto, date:dateStr});
     openId = cat.id;
     save(); render(); closeGastoModal();
   });
