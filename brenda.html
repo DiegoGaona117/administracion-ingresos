@@ -19,6 +19,7 @@
     --gold:#D79A1F;
     --red:#E5533D;
     --ring-bg:#E7E8EE;
+    --kb-offset:0px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -35,7 +36,7 @@
   h1{ font-size:26px; font-weight:800; margin:0 0 18px; letter-spacing:-0.02em; }
 
   .summary-card.single{
-    background:var(--card); border-radius:18px; padding:3px; margin-bottom:22px;
+    background:var(--card); border-radius:18px; padding:4px; margin-bottom:22px;
     display:grid; grid-template-columns:2fr 1.5fr; align-items:center; gap:14px;
   }
   .summary-left{ display:flex; flex-direction:column; gap:4px; min-width:0; }
@@ -137,12 +138,15 @@
   /* modal */
   .modal-bg{
     position:fixed; inset:0; background:rgba(17,19,24,0.4);
-    display:none; align-items: center; justify-content:center; z-index:50;
+    display:none; align-items:flex-end; justify-content:center; z-index:50;
+    padding-bottom:var(--kb-offset);
+    transition:padding-bottom .12s ease;
   }
   .modal-bg.open{ display:flex; }
   .modal{
     background:#fff; width:100%; max-width:520px; border-radius:22px 22px 0 0;
     padding:24px 22px 30px; animation:slideUp .22s ease;
+    max-height:85vh; overflow-y:auto;
   }
   @keyframes slideUp{ from{transform:translateY(16px); opacity:0;} to{transform:translateY(0); opacity:1;} }
   .modal h2{ font-size:19px; font-weight:800; margin:0 0 3px; }
@@ -253,7 +257,7 @@
 (function(){
   const STORAGE_KEY = 'presupuestoMensual_v2';
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const EMOJIS = ['🛒','🚗','🏠','💡','📶','🧴','🐾','👕','💊','✂','☕','📚','🎁','💳','🐱','🐶','🍔','🎓','🔧','💰','🍟','🍕'];
+  const EMOJIS = ['🛒','🚗','🏠','💡','📶','🧴','🐾','👕','💊','🎬','☕','📚','🎁','💳','🐱','🐶','🍔','🎓','🔧','💰'];
 
   // Imágenes de la carita del total. Puedes reemplazar cada URL por la tuya.
   const TW = 'https://static.wixstatic.com/media/32c95b_';
@@ -315,6 +319,17 @@
 
   let state = load();
   let openId = null; // categoría expandida actualmente
+
+  // ---------- ajuste automático cuando aparece el teclado en móvil ----------
+  function adjustForKeyboard(){
+    if(!window.visualViewport) return;
+    const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+    document.documentElement.style.setProperty('--kb-offset', Math.max(0, Math.round(offset)) + 'px');
+  }
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', adjustForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustForKeyboard);
+  }
 
   function monthLabel(monthKey){
     const [y,m] = monthKey.split('-').map(Number);
@@ -519,9 +534,16 @@
     selectedEmoji = cat ? cat.icon : EMOJIS[0];
     buildEmojiRow();
     modalCategoria.classList.add('open');
-    document.getElementById('catNombre').focus();
+    requestAnimationFrame(()=>{
+      document.getElementById('catNombre').focus();
+      adjustForKeyboard();
+    });
   }
-  function closeCategoriaModal(){ modalCategoria.classList.remove('open'); editingCatId=null; }
+  function closeCategoriaModal(){
+    modalCategoria.classList.remove('open');
+    editingCatId=null;
+    document.documentElement.style.setProperty('--kb-offset','0px');
+  }
 
   document.getElementById('btnNuevaCategoria').addEventListener('click', ()=>openCategoriaModal(null));
   document.getElementById('catCancel').addEventListener('click', closeCategoriaModal);
@@ -548,9 +570,16 @@
     document.getElementById('gastoCatNombre').textContent = cat ? cat.name : '';
     document.getElementById('gastoMonto').value = '';
     modalGasto.classList.add('open');
-    document.getElementById('gastoMonto').focus();
+    requestAnimationFrame(()=>{
+      document.getElementById('gastoMonto').focus();
+      adjustForKeyboard();
+    });
   }
-  function closeGastoModal(){ modalGasto.classList.remove('open'); gastoCatId=null; }
+  function closeGastoModal(){
+    modalGasto.classList.remove('open');
+    gastoCatId=null;
+    document.documentElement.style.setProperty('--kb-offset','0px');
+  }
 
   document.getElementById('gastoCancel').addEventListener('click', closeGastoModal);
   modalGasto.addEventListener('click', (e)=>{ if(e.target===modalGasto) closeGastoModal(); });
