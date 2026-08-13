@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -22,7 +21,6 @@
     --gold:#D79A1F;
     --red:#E5533D;
     --ring-bg:#E7E8EE;
-    --kb-offset:0px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -142,14 +140,11 @@
   .modal-bg{
     position:fixed; inset:0; background:rgba(17,19,24,0.4);
     display:none; align-items:flex-end; justify-content:center; z-index:50;
-    padding-bottom:var(--kb-offset);
-    transition:padding-bottom .12s ease;
   }
   .modal-bg.open{ display:flex; }
   .modal{
     background:#fff; width:100%; max-width:520px; border-radius:22px 22px 0 0;
-    padding:24px 22px 30px; animation: slideUp .22s ease;
-    max-height:85vh; overflow-y:auto;
+    padding:24px 22px 30px; animation:slideUp .22s ease;
   }
   @keyframes slideUp{ from{transform:translateY(16px); opacity:0;} to{transform:translateY(0); opacity:1;} }
   .modal h2{ font-size:19px; font-weight:800; margin:0 0 3px; }
@@ -249,6 +244,10 @@
       <label for="gastoMonto">Monto gastado</label>
       <input type="number" id="gastoMonto" placeholder="200" min="0" step="1" inputmode="decimal">
     </div>
+    <div class="field">
+      <label for="gastoDesc">Descripción (opcional)</label>
+      <input type="text" id="gastoDesc" placeholder="Súper, tienda de la esquina..." maxlength="60">
+    </div>
     <div class="modal-actions">
       <button class="btn ghost" id="gastoCancel">Cancelar</button>
       <button class="btn primary" id="gastoGuardar">Registrar</button>
@@ -322,17 +321,6 @@
 
   let state = load();
   let openId = null; // categoría expandida actualmente
-
-  // ---------- ajuste automático cuando aparece el teclado en móvil ----------
-  function adjustForKeyboard(){
-    if(!window.visualViewport) return;
-    const offset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-    document.documentElement.style.setProperty('--kb-offset', Math.max(0, Math.round(offset)) + 'px');
-  }
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', adjustForKeyboard);
-    window.visualViewport.addEventListener('scroll', adjustForKeyboard);
-  }
 
   function monthLabel(monthKey){
     const [y,m] = monthKey.split('-').map(Number);
@@ -481,7 +469,10 @@
       }else{
         txWrap.innerHTML = [...cat.transactions].reverse().map(t=>`
           <div class="tx-row">
-            <div class="tx-date">${t.date}</div>
+            <div style="overflow:hidden;">
+              <div class="tx-desc">${escapeHtml(t.desc || 'Gasto')}</div>
+              <div class="tx-date">${t.date}</div>
+            </div>
             <span class="tx-amt">-${fmt(t.amount)}</span>
             <button class="tx-del" data-tx="${t.id}">✕</button>
           </div>
@@ -537,16 +528,9 @@
     selectedEmoji = cat ? cat.icon : EMOJIS[0];
     buildEmojiRow();
     modalCategoria.classList.add('open');
-    requestAnimationFrame(()=>{
-      document.getElementById('catNombre').focus();
-      adjustForKeyboard();
-    });
+    document.getElementById('catNombre').focus();
   }
-  function closeCategoriaModal(){
-    modalCategoria.classList.remove('open');
-    editingCatId=null;
-    document.documentElement.style.setProperty('--kb-offset','0px');
-  }
+  function closeCategoriaModal(){ modalCategoria.classList.remove('open'); editingCatId=null; }
 
   document.getElementById('btnNuevaCategoria').addEventListener('click', ()=>openCategoriaModal(null));
   document.getElementById('catCancel').addEventListener('click', closeCategoriaModal);
@@ -572,17 +556,11 @@
     const cat = state.categories.find(c=>c.id===catId);
     document.getElementById('gastoCatNombre').textContent = cat ? cat.name : '';
     document.getElementById('gastoMonto').value = '';
+    document.getElementById('gastoDesc').value = '';
     modalGasto.classList.add('open');
-    requestAnimationFrame(()=>{
-      document.getElementById('gastoMonto').focus();
-      adjustForKeyboard();
-    });
+    document.getElementById('gastoMonto').focus();
   }
-  function closeGastoModal(){
-    modalGasto.classList.remove('open');
-    gastoCatId=null;
-    document.documentElement.style.setProperty('--kb-offset','0px');
-  }
+  function closeGastoModal(){ modalGasto.classList.remove('open'); gastoCatId=null; }
 
   document.getElementById('gastoCancel').addEventListener('click', closeGastoModal);
   modalGasto.addEventListener('click', (e)=>{ if(e.target===modalGasto) closeGastoModal(); });
@@ -591,9 +569,10 @@
     if(!cat) return;
     const monto = Number(document.getElementById('gastoMonto').value);
     if(!monto || monto<=0){ alert('Escribe un monto válido.'); return; }
+    const desc = document.getElementById('gastoDesc').value.trim();
     const today = new Date();
     const dateStr = String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0');
-    cat.transactions.push({id:uid(), amount:monto, date:dateStr});
+    cat.transactions.push({id:uid(), amount:monto, desc, date:dateStr});
     openId = cat.id;
     save(); render(); closeGastoModal();
   });
