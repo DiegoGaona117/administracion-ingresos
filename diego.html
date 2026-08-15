@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Favicon -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%234E5BF2'/><circle cx='50' cy='50' r='30' fill='none' stroke='white' stroke-width='6' stroke-dasharray='141 47' stroke-linecap='round' transform='rotate(-90 50 50)'/><text y='60' x='50' text-anchor='middle' font-size='34' font-family='sans-serif' font-weight='800' fill='white'>$</text></svg>">
+<link rel="icon" href="https://static.wixstatic.com/media/32c95b_a67d16a7195b4e2aab8e8248e8d3c1ef~mv2.png">
 <style>
   :root{
     --bg:#FFFFFF;
@@ -84,9 +84,7 @@
   .ring-wrap svg{ position:absolute; inset:0; transform:rotate(-90deg); }
   .ring-wrap svg circle{ fill:none; stroke-width:3.5; }
   .ring-bg{ stroke:var(--ring-bg); }
-  .ring-fill{ stroke:var(--green); stroke-linecap:round; transition:stroke-dashoffset .4s ease, stroke .3s ease; }
-  .row.warn .ring-fill{ stroke:var(--gold); }
-  .row.over .ring-fill{ stroke:var(--red); }
+  .ring-fill{ stroke:var(--green); stroke-linecap:round; transition:stroke-dashoffset .4s ease, stroke .5s ease; }
   .icon-emoji{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:22px;
@@ -337,6 +335,17 @@
     const t = Math.min(1, (37.5 - pct) / 37.5);
     return lerpColor(COLOR_GOLD, COLOR_RED, t);
   }
+  // Color del círculo de cada categoría: verde hasta 50% disponible,
+  // y de ahí en adelante va cambiando gradualmente hasta rojo en 0%.
+  function ringColor(pctRemaining){
+    if(pctRemaining >= 50) return COLOR_GREEN;
+    if(pctRemaining >= 25){
+      const t = (50 - pctRemaining) / (50 - 25);
+      return lerpColor(COLOR_GREEN, COLOR_GOLD, t);
+    }
+    const t = Math.min(1, (25 - pctRemaining) / 25);
+    return lerpColor(COLOR_GOLD, COLOR_RED, t);
+  }
   function faceKeyForPct(pct){
     if(pct >= 80) return 'feliz';
     if(pct >= 60) return 'contento';
@@ -401,9 +410,12 @@
     const budget = Number(cat.budget)||0;
     const remaining = budget - spent;
     const pct = budget > 0 ? Math.min(1, spent/budget) : (spent>0?1:0);
+    const pctRemaining = Math.max(0, Math.min(100, (1-pct)*100));
 
     const r = 22; const circumference = 2*Math.PI*r;
-    const dashoffset = circumference * (1-pct);
+    // El círculo empieza lleno (sin gastar nada) y se va vaciando conforme se gasta
+    const dashoffset = circumference * pct;
+    const [rc, gc, bc] = ringColor(pctRemaining);
 
     const wrapper = document.createElement('div');
 
@@ -421,7 +433,8 @@
         <svg width="52" height="52" viewBox="0 0 52 52">
           <circle class="ring-bg" cx="26" cy="26" r="${r}"></circle>
           <circle class="ring-fill" cx="26" cy="26" r="${r}"
-            stroke-dasharray="${circumference}" stroke-dashoffset="${dashoffset}"></circle>
+            stroke-dasharray="${circumference}" stroke-dashoffset="${dashoffset}"
+            style="stroke:rgb(${rc},${gc},${bc})"></circle>
         </svg>
         <div class="icon-emoji">${cat.icon}</div>
       </div>
@@ -521,7 +534,6 @@
     selectedEmoji = cat ? cat.icon : EMOJIS[0];
     buildEmojiRow();
     modalCategoria.classList.add('open');
-    document.getElementById('catNombre').focus();
   }
   function closeCategoriaModal(){ modalCategoria.classList.remove('open'); editingCatId=null; }
 
@@ -551,7 +563,6 @@
     document.getElementById('gastoMonto').value = '';
     document.getElementById('gastoDesc').value = '';
     modalGasto.classList.add('open');
-    document.getElementById('gastoMonto').focus();
   }
   function closeGastoModal(){ modalGasto.classList.remove('open'); gastoCatId=null; }
 
