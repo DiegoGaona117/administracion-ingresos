@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Favicon -->
-<link rel="icon" href="https://static.wixstatic.com/media/32c95b_67e2ef8dde634f8194ca9dc450448d9a~mv2.png">
+<link rel="icon" href="https://static.wixstatic.com/media/32c95b_a67d16a7195b4e2aab8e8248e8d3c1ef~mv2.png">
 <style>
   :root{
     --bg:#FFFFFF;
@@ -251,20 +251,24 @@
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const EMOJIS = ['🛒','🚗','🏠','💡','📶','🧴','🐾','👕','💊','✂','☕','📚','🎁','💳','🐱','🐶','🍔','🎓','🔧','💰','🍕','🍟','🍗','👗','🏋️‍♀️','🏋️‍♂️','🍝','🥣','🥤'];
 
-  // Imágenes de la carita del total. Puedes reemplazar cada URL por la tuya.
-  const TW = 'https://static.wixstatic.com/media/32c95b_';
-  const FACE_IMAGES = {
-    feliz:       TW + '4d3beec48f184c7ba3bfacb926b231e6~mv2.jpeg', // 😄
-    contento:    TW + 'ff82f31da4314307a3794df4e5187977~mv2.jpeg', // 🙂
-    neutral:     TW + '0cc5624b4b4d40f08de4fe36d7c5dfc8~mv2.jpeg', // 😐
-    preocupado:  TW + '07f7c4ed22b0483ab9c0cf33fa4a2261~mv2.jpeg', // 😟
-    triste:      TW + 'a65f0c0e5ee7452d896faef58b2ef18c~mv2.jpeg', // 😢
-    llorando:    TW + 'e3dc640618df4ee9baa628f8776602cc~mv2.jpeg'  // 😭
-  };
-  // Respaldo en emoji de texto por si la imagen no llega a cargar
-  const FACE_FALLBACK = {
-    feliz:'😄', contento:'🙂', neutral:'😐', preocupado:'😟', triste:'😢', llorando:'😭'
-  };
+  // Imágenes de la carita del total. Se elige una al azar cada vez que se abre la app.
+  const FACE_IMAGES = [
+    'https://static.wixstatic.com/media/32c95b_08712de206da4c8e948eb8490002bdb9~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_057d9fe334044191bdfc41d4bf637687~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_31c806f15ac54d82a9ea928f68f84475~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_19cd491ac20741db94b32809a071a6da~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_c51214870a78477489e8b5a8b137226c~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_b2cf1085da924c5c82149702228a2bbf~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_d962784ee0ef40308eef46f2647d2124~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_96a5cdb990f04c06a626de0e8b37ef48~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_a6748ea6cd7a48b3ba850f65d4e74b35~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_9d5ba6cc071a46f4967ae0b849527b92~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_345760a7fc274a3493708bf60b576df1~mv2.jpeg',
+    'https://static.wixstatic.com/media/32c95b_1492a1acca064acca83b15e09e356b03~mv2.jpeg'
+  ];
+  // Se escoge una sola vez al cargar la app (no cambia con cada gasto que registres)
+  const randomFaceUrl = FACE_IMAGES[Math.floor(Math.random() * FACE_IMAGES.length)];
+  const FACE_FALLBACK_EMOJI = '💰';
 
   const fmt = n => '$' + (Math.round((n||0)*100)/100).toLocaleString('es-MX',{minimumFractionDigits:0, maximumFractionDigits:2});
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -346,15 +350,6 @@
     const t = Math.min(1, (25 - pctRemaining) / 25);
     return lerpColor(COLOR_GOLD, COLOR_RED, t);
   }
-  function faceKeyForPct(pct){
-    if(pct >= 80) return 'feliz';
-    if(pct >= 60) return 'contento';
-    if(pct >= 40) return 'neutral';
-    if(pct >= 20) return 'preocupado';
-    if(pct >= 10)   return 'triste';
-    return 'llorando';
-  }
-
   function render(){
 
     const totalApartados = state.categories.reduce((s,c)=>s+(Number(c.budget)||0),0);
@@ -378,18 +373,6 @@
 
     document.getElementById('drainCaption').textContent =
       totalApartados > 0 ? `Disponible: ${Math.round(pctDisponible)}%` : 'Sin presupuestos asignados';
-
-    const faceKey = faceKeyForPct(totalApartados > 0 ? pctDisponible : 100);
-    const faceImg = document.getElementById('totalFaceImg');
-    const faceEmoji = document.getElementById('totalFaceEmoji');
-    faceImg.style.display = '';
-    faceEmoji.style.display = 'none';
-    faceImg.onerror = ()=>{
-      faceImg.style.display = 'none';
-      faceEmoji.style.display = 'flex';
-      faceEmoji.textContent = FACE_FALLBACK[faceKey];
-    };
-    faceImg.src = FACE_IMAGES[faceKey];
 
     const list = document.getElementById('list');
     list.innerHTML = '';
@@ -593,6 +576,21 @@
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape'){ closeCategoriaModal(); closeGastoModal(); }
   });
+
+  // ---------- carita aleatoria: se elige una sola vez al abrir la app ----------
+  function initFace(){
+    const faceImg = document.getElementById('totalFaceImg');
+    const faceEmoji = document.getElementById('totalFaceEmoji');
+    faceImg.style.display = '';
+    faceEmoji.style.display = 'none';
+    faceImg.onerror = ()=>{
+      faceImg.style.display = 'none';
+      faceEmoji.style.display = 'flex';
+      faceEmoji.textContent = FACE_FALLBACK_EMOJI;
+    };
+    faceImg.src = randomFaceUrl;
+  }
+  initFace();
 
   render();
 })();
