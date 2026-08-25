@@ -494,7 +494,7 @@
     else if(budget>0 && pct >= 0.8) row.classList.add('warn');
 
     const isEssential = cat.essential !== false;
-    const subText = `Quedan ${fmt(effectiveRemaining)} de ${fmt(budget)}`;
+    const subText = `Quedan ${fmt(Math.max(effectiveRemaining,0))} de ${fmt(budget)}`;
     const coveringBadge = adjustment > 0.5
       ? ` <span class="cover-badge" title="Está cubriendo ${fmt(adjustment)} del sobregasto de otra categoría">↙️</span>`
       : '';
@@ -511,7 +511,7 @@
       </div>
       <div class="row-mid">
         <div class="row-name">${escapeHtml(cat.name)}${isEssential ? ' <span class="lock-badge" title="Protegida: no se le quita dinero por gastos de otras categorías">🔒</span>' : ''}${coveringBadge}</div>
-        <div class="row-sub ${effectiveRemaining<0?'over':''}">${subText}</div>
+        <div class="row-sub">${subText}</div>
       </div>
       <div class="row-right">
         <div class="row-amt ${effectiveRemaining<0?'over':''}">${fmt(effectiveRemaining)}</div>
