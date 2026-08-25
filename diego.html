@@ -97,6 +97,7 @@
 
   .row-mid{ flex:1; min-width:0; }
   .row-name{ font-size:15.5px; font-weight:700; margin-bottom:2px; }
+  .lock-badge{ font-size:11px; vertical-align:middle; opacity:.75; }
   .row-sub{ font-size:12.5px; color:var(--ink-soft); }
   .row-sub.over{ color:var(--red); font-weight:600; }
 
@@ -162,6 +163,12 @@
     font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
   .emoji-opt.sel{ border-color:var(--blue); background:var(--blue-soft); }
+  .checkbox-field{
+    display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600;
+    color:var(--ink); margin:2px 0 4px; cursor:pointer;
+  }
+  .checkbox-field input{ width:18px; height:18px; accent-color:var(--blue); cursor:pointer; }
+  .checkbox-hint{ font-size:11.5px; color:var(--ink-soft); margin:0 0 14px; line-height:1.4; }
   .modal-actions{ display:flex; gap:10px; margin-top:20px; }
   .btn{
     flex:1; border:none; border-radius:12px; padding:13px; font-size:14.5px; font-weight:700; cursor:pointer;
@@ -225,6 +232,11 @@
       <label for="catBudget">Presupuesto este mes</label>
       <input type="number" id="catBudget" placeholder="2000" min="0" step="1">
     </div>
+    <label class="checkbox-field">
+      <input type="checkbox" id="catEsencial" checked>
+      <span>🔒 Es un gasto necesario (protegido)</span>
+    </label>
+    <p class="checkbox-hint">Las categorías no protegidas (antojos, salidas, etc.) son las que aportan dinero automáticamente cuando te pasas del presupuesto en otra.</p>
     <div class="modal-actions">
       <button class="btn ghost" id="catCancel">Cancelar</button>
       <button class="btn primary" id="catGuardar">Guardar</button>
@@ -316,10 +328,10 @@
       month: currentMonthKey(),
       income: 0,
       categories: [
-        {id: uid(), name:'Comida', icon:'🛒', budget:2000, transactions:[]},
-        {id: uid(), name:'Transporte', icon:'🚗', budget:800, transactions:[]},
-        {id: uid(), name:'Servicios (agua/luz/internet)', icon:'💡', budget:1200, transactions:[]},
-        {id: uid(), name:'Mantenimiento', icon:'🔧', budget:500, transactions:[]},
+        {id: uid(), name:'Comida', icon:'🛒', budget:2000, essential:true, transactions:[]},
+        {id: uid(), name:'Transporte', icon:'🚗', budget:800, essential:true, transactions:[]},
+        {id: uid(), name:'Servicios (agua/luz/internet)', icon:'💡', budget:1200, essential:true, transactions:[]},
+        {id: uid(), name:'Mantenimiento', icon:'🔧', budget:500, essential:true, transactions:[]},
       ]
     };
   }
@@ -330,7 +342,10 @@
       if(!raw) return defaultData();
       const data = JSON.parse(raw);
       if(!data.categories) return defaultData();
-      data.categories.forEach(c=>{ if(!c.icon) c.icon = '💰'; });
+      data.categories.forEach(c=>{
+        if(!c.icon) c.icon = '💰';
+        if(typeof c.essential !== 'boolean') c.essential = true;
+      });
       return data;
     }catch(e){
       console.error('Error leyendo localStorage', e);
@@ -383,6 +398,37 @@
     const t = Math.min(1, (25 - pctRemaining) / 25);
     return lerpColor(COLOR_GOLD, COLOR_RED, t);
   }
+
+  // ---------- redistribución automática de sobregastos ----------
+  // Si una categoría se pasa de su presupuesto, ese excedente se reparte
+  // (en proporción al presupuesto de cada una) entre las categorías NO
+  // protegidas — nunca entre las marcadas como "gasto necesario".
+  function computeAdjustments(categories){
+    const info = categories.map(c=>{
+      const spent = catSpent(c);
+      const budget = Number(c.budget)||0;
+      return { id:c.id, budget, remaining: budget - spent, essential: c.essential !== false };
+    });
+
+    const totalOverage = info
+      .filter(c => c.remaining < 0)
+      .reduce((s,c) => s + Math.abs(c.remaining), 0);
+
+    const adjustments = {};
+    info.forEach(c => { adjustments[c.id] = 0; });
+    if(totalOverage <= 0) return adjustments;
+
+    // Solo absorben categorías NO protegidas que todavía tengan saldo a favor
+    const pool = info.filter(c => !c.essential && c.remaining >= 0);
+    const poolTotal = pool.reduce((s,c) => s + c.budget, 0);
+    if(poolTotal <= 0) return adjustments; // nada que absorba: no se toca nada
+
+    pool.forEach(c => {
+      adjustments[c.id] = totalOverage * (c.budget / poolTotal);
+    });
+    return adjustments;
+  }
+
   function render(){
 
     const totalApartados = state.categories.reduce((s,c)=>s+(Number(c.budget)||0),0);
@@ -418,15 +464,17 @@
       return;
     }
 
-    state.categories.forEach(cat => list.appendChild(renderRow(cat)));
+    const adjustments = computeAdjustments(state.categories);
+    state.categories.forEach(cat => list.appendChild(renderRow(cat, adjustments[cat.id] || 0)));
   }
 
-  function renderRow(cat){
+  function renderRow(cat, adjustment){
     const spent = catSpent(cat);
     const budget = Number(cat.budget)||0;
     const remaining = budget - spent;
-    const pct = budget > 0 ? Math.min(1, spent/budget) : (spent>0?1:0);
-    const pctRemaining = Math.max(0, Math.min(100, (1-pct)*100));
+    const effectiveRemaining = remaining - (adjustment||0);
+    const pct = budget > 0 ? Math.min(1, Math.max(0, (budget-effectiveRemaining)/budget)) : (spent>0?1:0);
+    const pctRemaining = budget > 0 ? Math.max(0, Math.min(100, (effectiveRemaining/budget)*100)) : 100;
 
     const r = 22; const circumference = 2*Math.PI*r;
     // El círculo empieza lleno (sin gastar nada) y se va vaciando conforme se gasta
@@ -437,12 +485,16 @@
 
     const row = document.createElement('div');
     row.className = 'row';
-    if(remaining < 0) row.classList.add('over');
+    if(effectiveRemaining < 0) row.classList.add('over');
     else if(budget>0 && pct >= 0.8) row.classList.add('warn');
 
-    const subText = remaining >= 0
-      ? `Quedan ${fmt(remaining)} de ${fmt(budget)}`
-      : `Excediste tu presupuesto por ${fmt(Math.abs(remaining))}`;
+    const isEssential = cat.essential !== false;
+    let subText = effectiveRemaining >= 0
+      ? `Quedan ${fmt(effectiveRemaining)} de ${fmt(budget)}`
+      : `Excediste tu presupuesto por ${fmt(Math.abs(effectiveRemaining))}`;
+    if(adjustment > 0.5){
+      subText += ` · cubriendo ${fmt(adjustment)} de otras categorías`;
+    }
 
     row.innerHTML = `
       <div class="ring-wrap">
@@ -455,11 +507,11 @@
         <div class="icon-emoji">${cat.icon}</div>
       </div>
       <div class="row-mid">
-        <div class="row-name">${escapeHtml(cat.name)}</div>
-        <div class="row-sub ${remaining<0?'over':''}">${subText}</div>
+        <div class="row-name">${escapeHtml(cat.name)}${isEssential ? ' <span class="lock-badge" title="Protegida: no se le quita dinero por gastos de otras categorías">🔒</span>' : ''}</div>
+        <div class="row-sub ${effectiveRemaining<0?'over':''}">${subText}</div>
       </div>
       <div class="row-right">
-        <div class="row-amt ${remaining<0?'over':''}">${fmt(Math.max(remaining,0))}</div>
+        <div class="row-amt ${effectiveRemaining<0?'over':''}">${fmt(Math.max(effectiveRemaining,0))}</div>
         <div class="row-budget">disponible</div>
       </div>
     `;
