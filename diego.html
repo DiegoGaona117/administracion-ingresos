@@ -599,6 +599,7 @@
     document.getElementById('catModalTitle').textContent = cat ? 'Editar categoría' : 'Nueva categoría';
     document.getElementById('catNombre').value = cat ? cat.name : '';
     document.getElementById('catBudget').value = cat ? cat.budget : '';
+    document.getElementById('catEsencial').checked = cat ? cat.essential !== false : true;
     selectedEmoji = cat ? cat.icon : EMOJIS[0];
     buildEmojiRow();
     modalCategoria.classList.add('open');
@@ -611,12 +612,13 @@
   document.getElementById('catGuardar').addEventListener('click', ()=>{
     const name = document.getElementById('catNombre').value.trim();
     const budget = Math.max(0, Number(document.getElementById('catBudget').value)||0);
+    const essential = document.getElementById('catEsencial').checked;
     if(!name){ alert('Ponle un nombre a la categoría.'); return; }
     if(editingCatId){
       const cat = state.categories.find(c=>c.id===editingCatId);
-      cat.name = name.slice(0,30); cat.budget = budget; cat.icon = selectedEmoji;
+      cat.name = name.slice(0,30); cat.budget = budget; cat.icon = selectedEmoji; cat.essential = essential;
     }else{
-      state.categories.push({id:uid(), name:name.slice(0,30), icon:selectedEmoji, budget, transactions:[]});
+      state.categories.push({id:uid(), name:name.slice(0,30), icon:selectedEmoji, budget, essential, transactions:[]});
     }
     save(); render(); closeCategoriaModal();
   });
