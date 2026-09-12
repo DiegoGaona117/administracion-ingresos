@@ -406,8 +406,9 @@
 
   // ---------- redistribución automática de sobregastos ----------
   // Si una categoría se pasa de su presupuesto, ese excedente se reparte
-  // (en proporción al presupuesto de cada una) entre las categorías NO
-  // protegidas — nunca entre las marcadas como "gasto necesario".
+  // entre las categorías NO protegidas que todavía tienen saldo disponible,
+  // en proporción a CUÁNTO tienen disponible cada una (no a su presupuesto
+  // total) — así la que más le sobra es la que más absorbe.
   function computeAdjustments(categories){
     const info = categories.map(c=>{
       const spent = catSpent(c);
@@ -423,14 +424,24 @@
     info.forEach(c => { adjustments[c.id] = 0; });
     if(totalOverage <= 0) return adjustments;
 
-    // Solo absorben categorías NO protegidas que todavía tengan saldo a favor
-    const pool = info.filter(c => !c.essential && c.remaining >= 0);
-    const poolTotal = pool.reduce((s,c) => s + c.budget, 0);
-    if(poolTotal <= 0) return adjustments; // nada que absorba: no se toca nada
+    // Solo absorben categorías NO protegidas que tengan saldo positivo disponible
+    const pool = info.filter(c => !c.essential && c.remaining > 0);
+    const poolTotal = pool.reduce((s,c) => s + c.remaining, 0);
+    if(poolTotal <= 0) return adjustments; // nadie puede absorber, no se toca nada
 
-    pool.forEach(c => {
-      adjustments[c.id] = totalOverage * (c.budget / poolTotal);
-    });
+    if(totalOverage <= poolTotal){
+      // Reparto proporcional a lo que cada una tiene disponible
+      pool.forEach(c => {
+        adjustments[c.id] = totalOverage * (c.remaining / poolTotal);
+      });
+    } else {
+      // No alcanza para cubrir todo el sobregasto: se vacían por completo,
+      // pero nunca quedan en negativo por culpa del ajuste.
+      pool.forEach(c => {
+        adjustments[c.id] = c.remaining;
+      });
+    }
+
     return adjustments;
   }
 
@@ -659,10 +670,32 @@
   });
 
   // ---------- cerrar mes ----------
+  // Al cerrar el mes, cada categoría ajusta su propio presupuesto:
+  // - Si le sobró dinero (después de aplicar el reparto de sobregastos),
+  //   ese sobrante se SUMA a su presupuesto del próximo mes.
+  // - Si terminó en negativo (se pasó, o cubrió el sobregasto de otra
+  //   categoría más de lo que tenía), ese faltante se RESTA de su
+  //   presupuesto del próximo mes (nunca queda en negativo, mínimo $0).
+  // Luego se borran todos los movimientos para arrancar el mes limpio.
   document.getElementById('btnResetMes').addEventListener('click', ()=>{
-    if(!confirm('Esto guarda tus presupuestos pero borra todos los movimientos registrados, para empezar un mes nuevo. ¿Continuar?')) return;
+    if(!confirm('Esto cierra el mes: cada categoría ajustará su presupuesto sumando lo que le sobró o restando lo que se pasó, y se borrarán los movimientos registrados. ¿Continuar?')) return;
+
+    const adjustments = computeAdjustments(state.categories);
+
+    state.categories.forEach(c=>{
+      const spent = catSpent(c);
+      const budget = Number(c.budget)||0;
+      const remaining = budget - spent;
+      const effectiveRemaining = remaining - (adjustments[c.id]||0);
+
+      let newBudget = budget + effectiveRemaining;
+      if(newBudget < 0) newBudget = 0;
+
+      c.budget = Math.round(newBudget);
+      c.transactions = [];
+    });
+
     state.month = currentMonthKey();
-    state.categories.forEach(c => c.transactions = []);
     openId = null;
     save(); render();
   });
