@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nutrición Mensual</title>
+<title>Nutrición Diaria & Rendimiento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Favicon SVG: Manzana Roja -->
@@ -30,7 +30,33 @@
   }
   .wrap{max-width:520px; margin:0 auto; padding:22px 10px 90px;}
 
-  /* Tarjeta Resumen Mensual */
+  /* Botón de toggle para panel mensual */
+  .toggle-monthly-container{
+    display:flex; justify-content:flex-end; margin-bottom:12px;
+  }
+  .btn-toggle-monthly{
+    border:1.5px solid var(--line); background:var(--card); color:var(--ink);
+    font-size:12.5px; font-weight:700; padding:8px 14px; border-radius:20px;
+    cursor:pointer; transition:all 0.2s ease;
+  }
+  .btn-toggle-monthly:hover{ border-color:var(--blue); color:var(--blue); }
+
+  /* Panel Mensual (Oculto por defecto) */
+  .monthly-panel{
+    display:none; background:#FAFBFD; border:2px dashed var(--blue-soft);
+    border-radius:20px; padding:18px; margin-bottom:20px; animation:fadeIn .2s ease;
+  }
+  .monthly-panel.open{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);} }
+
+  .score-card{
+    background:var(--blue-soft); border-radius:14px; padding:14px; text-align:center; margin-bottom:14px;
+  }
+  .score-val{ font-size:32px; font-weight:800; color:var(--blue); margin:4px 0; }
+  .score-lbl{ font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em; }
+  .score-desc{ font-size:11.5px; color:var(--ink); margin-top:2px; font-weight:600; }
+
+  /* Tarjeta Resumen */
   .summary-card{
     background:var(--card); border-radius:18px; padding:18px; margin-bottom:14px;
     display:flex; flex-direction:column; gap:14px;
@@ -185,14 +211,80 @@
 <body>
 <div class="wrap">
 
-  <!-- Tarjeta Resumen Mensual -->
+  <!-- Botón Activar / Ocultar Panel Mensual -->
+  <div class="toggle-monthly-container">
+    <button class="btn-toggle-monthly" id="btnToggleMonthly">📊 Ver Rendimiento Mensual</button>
+  </div>
+
+  <!-- PANEL MENSUAL (OCULTO POR DEFECTO) -->
+  <div class="monthly-panel" id="monthlyPanel">
+    
+    <!-- Calificación del 0 al 10 -->
+    <div class="score-card">
+      <div class="score-lbl">Calidad Nutricional del Mes</div>
+      <div class="score-val" id="monthlyScore">-- / 10</div>
+      <div class="score-desc" id="monthlyScoreDesc">Calculando base a días transcurridos...</div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-header">
+        <span class="summary-title">Acumulado Mensual</span>
+        <span class="summary-days" id="valDiasMes">Día 1 de 30</span>
+      </div>
+      
+      <!-- Calorías Mes -->
+      <div class="main-stat">
+        <div class="stat-labels">
+          <span class="num" id="valCaloriasMes">0 kcal</span>
+          <span class="target-text" id="targetCaloriasMes">Meta: 0 kcal</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar cal" id="barCaloriasMes"></div></div>
+      </div>
+
+      <!-- Proteína Mes -->
+      <div class="main-stat">
+        <div class="stat-labels">
+          <span class="num" style="font-size:18px;" id="valProtMes">0g Prot</span>
+          <span class="target-text" id="targetProtMes">Meta: 0g</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar prot" id="barProtMes"></div></div>
+      </div>
+
+      <!-- Carbohidratos Mes -->
+      <div class="main-stat">
+        <div class="stat-labels">
+          <span class="num" style="font-size:18px;" id="valCarbMes">0g Carb</span>
+          <span class="target-text" id="targetCarbMes">Meta: 0g</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar carb" id="barCarbMes"></div></div>
+      </div>
+
+      <!-- Micro Métricas Mes -->
+      <div class="macro-grid">
+        <div class="macro-item">
+          <span class="macro-lbl">Grasas Totales</span>
+          <span class="macro-val" id="valGrasaMes">0g</span>
+          <span class="macro-target" id="targetGrasaMes">/0g</span>
+          <span class="macro-avg" id="avgGrasaMes">0g/día</span>
+        </div>
+        <div class="macro-item">
+          <span class="macro-lbl">Fibra Total</span>
+          <span class="macro-val" id="valFibraMes">0g</span>
+          <span class="macro-target" id="targetFibraMes">/0g</span>
+          <span class="macro-avg" id="avgFibraMes">0g/día</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DIARIO (PRINCIPAL) -->
   <div class="summary-card">
     <div class="summary-header">
-      <span class="summary-title">Progreso Mensual</span>
-      <span class="summary-days" id="valDiasMes">Día 1 de 30</span>
+      <span class="summary-title">Consumo de Hoy</span>
+      <span class="summary-days" id="valFechaHoy">Hoy</span>
     </div>
     
-    <!-- Barra Calorías -->
+    <!-- Calorías Hoy -->
     <div class="main-stat">
       <div class="stat-labels">
         <span class="num" id="valCalorias">0 kcal</span>
@@ -201,7 +293,7 @@
       <div class="progress-bg"><div class="progress-bar cal" id="barCalorias"></div></div>
     </div>
 
-    <!-- Barra Proteína -->
+    <!-- Proteína Hoy -->
     <div class="main-stat">
       <div class="stat-labels">
         <span class="num" style="font-size:18px;" id="valProtBar">0g Prot</span>
@@ -210,7 +302,7 @@
       <div class="progress-bg"><div class="progress-bar prot" id="barProt"></div></div>
     </div>
 
-    <!-- Barra Carbohidratos -->
+    <!-- Carbohidratos Hoy -->
     <div class="main-stat">
       <div class="stat-labels">
         <span class="num" style="font-size:18px;" id="valCarbBar">0g Carb</span>
@@ -219,32 +311,30 @@
       <div class="progress-bg"><div class="progress-bar carb" id="barCarb"></div></div>
     </div>
 
-    <!-- Micro Métricas -->
+    <!-- Micro Métricas Hoy -->
     <div class="macro-grid">
       <div class="macro-item">
         <span class="macro-lbl">Grasas Totales</span>
         <span class="macro-val" id="valGrasa">0g</span>
         <span class="macro-target" id="targetGrasa">/0g</span>
-        <span class="macro-avg" id="avgGrasa">0g/día</span>
       </div>
       <div class="macro-item">
         <span class="macro-lbl">Fibra Total</span>
         <span class="macro-val" id="valFibra">0g</span>
         <span class="macro-target" id="targetFibra">/0g</span>
-        <span class="macro-avg" id="avgFibra">0g/día</span>
       </div>
     </div>
   </div>
 
   <!-- Barra Perfil / Metas -->
   <div class="profile-bar">
-    <span>Meta Proteína: <strong>100g/día</strong> (Económica / Magra)</span>
+    <span>Meta Proteína: <strong id="lblMetaProt">100g/día</strong></span>
     <button class="btn-edit-goals" id="btnEditarMetas">Ajustar Metas</button>
   </div>
 
-  <!-- SECCIÓN 1: Alimentos Consumidos este mes -->
+  <!-- SECCIÓN 1: Alimentos Consumidos HOY -->
   <div class="section-title">
-    <h2>Alimentos Consumidos</h2>
+    <h2>Consumidos Hoy</h2>
   </div>
   <div class="list" id="consumedList"></div>
 
@@ -268,7 +358,7 @@
 <div class="modal-bg" id="modalMetas">
   <div class="modal">
     <h2>Ajustar Metas Diarias</h2>
-    <p class="sub">Tus metas mensuales se calcularán multiplicando estos valores por los días del mes.</p>
+    <p class="sub">Tus metas diarias se utilizarán para calcular el rendimiento de cada día.</p>
     <div class="field">
       <label for="goalCal">Meta de Calorías / día (kcal)</label>
       <input type="number" id="goalCal" placeholder="2350">
@@ -362,12 +452,17 @@
 
 <script>
 (function(){
-  const STORAGE_KEY = 'appNutricionMensual_v6';
+  const STORAGE_KEY = 'appNutricionDiaria_v7';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 
-  function todayDateStr(){
+  function todayISOStr(){
     const d = new Date();
-    return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+    return d.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+  }
+
+  function todayFormattedStr(){
+    const d = new Date();
+    return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
   }
 
   function currentMonthKey(){
@@ -442,13 +537,18 @@
   let openFoodId = null;
   let searchFilter = '';
 
-  function foodTotalQty(food){
+  function foodDailyQty(food, isoDate){
+    return food.entries
+      .filter(e => e.isoDate === isoDate)
+      .reduce((s,e) => s + e.qty, 0);
+  }
+
+  function foodMonthlyQty(food){
     return food.entries.reduce((s,e) => s + e.qty, 0);
   }
 
-  function foodNutrients(food){
-    const totalQty = foodTotalQty(food);
-    const factor = totalQty / (food.baseQty || 1);
+  function foodNutrientsByQty(food, qty){
+    const factor = qty / (food.baseQty || 1);
     return {
       cal: (food.cal || 0) * factor,
       prot: (food.prot || 0) * factor,
@@ -460,22 +560,114 @@
 
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
 
+  // Calcular la calificación de 0 a 10 basada en los días pasados
+  function calculateMonthlyScore(dayOfMonth){
+    if (dayOfMonth === 0) return { score: 10, text: 'Inicio de mes' };
+
+    // Agrupar nutrientes por día
+    const daysData = {};
+    for (let i = 1; i <= dayOfMonth; i++) {
+      daysData[i] = { cal: 0, prot: 0, carb: 0, grasa: 0, fibra: 0 };
+    }
+
+    state.foods.forEach(f => {
+      f.entries.forEach(e => {
+        if (e.isoDate) {
+          const dayNum = parseInt(e.isoDate.split('-')[2], 10);
+          if (dayNum <= dayOfMonth && daysData[dayNum]) {
+            const n = foodNutrientsByQty(f, e.qty);
+            daysData[dayNum].cal += n.cal;
+            daysData[dayNum].prot += n.prot;
+            daysData[dayNum].carb += n.carb;
+            daysData[dayNum].grasa += n.grasa;
+            daysData[dayNum].fibra += n.fibra;
+          }
+        }
+      });
+    });
+
+    let totalDayScores = 0;
+
+    for (let i = 1; i <= dayOfMonth; i++) {
+      const d = daysData[i];
+      // Si el día no tiene registros, se considera incumplido (0 pts)
+      if (d.cal === 0 && d.prot === 0) continue;
+
+      // Evaluar precisión del día respecto a la meta (100% de coincidencia = 1.0)
+      const calRatio = Math.min(1, d.cal / state.goals.dailyCal);
+      const protRatio = Math.min(1, d.prot / state.goals.dailyProt);
+      const carbRatio = Math.min(1, d.carb / state.goals.dailyCarb);
+
+      // Promedio ponderado del día (Proteína 40%, Calorías 40%, Carbohidratos 20%)
+      const dayScore = (protRatio * 0.4) + (calRatio * 0.4) + (carbRatio * 0.2);
+      totalDayScores += dayScore;
+    }
+
+    const finalScore = ((totalDayScores / dayOfMonth) * 10).toFixed(1);
+    let text = 'Excelente disciplina';
+    if (finalScore < 5) text = 'Necesita mayor constancia';
+    else if (finalScore < 7.5) text = 'Buen progreso, ajusta proteínas';
+    else if (finalScore < 9) text = 'Muy buen rendimiento diario';
+
+    return { score: finalScore, text };
+  }
+
   function render(){
+    const todayISO = todayISOStr();
     const dayOfMonth = new Date().getDate();
     const totalDaysInMonth = daysInCurrentMonth();
 
-    document.getElementById('valDiasMes').textContent = `Día ${dayOfMonth} de ${totalDaysInMonth}`;
+    document.getElementById('valFechaHoy').textContent = todayFormattedStr();
+    document.getElementById('lblMetaProt').textContent = `${state.goals.dailyProt}g/día`;
 
-    // Totales acumulados
-    let totalCal = 0, totalProt = 0, totalCarb = 0, totalGrasa = 0, totalFibra = 0;
+    // --- 1. TOTALES DE HOY ---
+    let todayCal = 0, todayProt = 0, todayCarb = 0, todayGrasa = 0, todayFibra = 0;
 
     state.foods.forEach(f => {
-      const n = foodNutrients(f);
-      totalCal += n.cal;
-      totalProt += n.prot;
-      totalCarb += n.carb;
-      totalGrasa += n.grasa;
-      totalFibra += n.fibra;
+      const q = foodDailyQty(f, todayISO);
+      if (q > 0) {
+        const n = foodNutrientsByQty(f, q);
+        todayCal += n.cal;
+        todayProt += n.prot;
+        todayCarb += n.carb;
+        todayGrasa += n.grasa;
+        todayFibra += n.fibra;
+      }
+    });
+
+    // Actualizar Panel Diario
+    document.getElementById('valCalorias').textContent = `${Math.round(todayCal).toLocaleString('es-MX')} kcal`;
+    document.getElementById('targetCalorias').textContent = `Meta: ${state.goals.dailyCal} kcal`;
+    document.getElementById('barCalorias').style.width = (Math.min(100, Math.round((todayCal / state.goals.dailyCal) * 100)) || 0) + '%';
+
+    document.getElementById('valProtBar').textContent = `${Math.round(todayProt)}g Prot`;
+    document.getElementById('targetProtBar').textContent = `Meta: ${state.goals.dailyProt}g`;
+    document.getElementById('barProt').style.width = (Math.min(100, Math.round((todayProt / state.goals.dailyProt) * 100)) || 0) + '%';
+
+    document.getElementById('valCarbBar').textContent = `${Math.round(todayCarb)}g Carb`;
+    document.getElementById('targetCarbBar').textContent = `Meta: ${state.goals.dailyCarb}g`;
+    document.getElementById('barCarb').style.width = (Math.min(100, Math.round((todayCarb / state.goals.dailyCarb) * 100)) || 0) + '%';
+
+    document.getElementById('valGrasa').textContent = Math.round(todayGrasa) + 'g';
+    document.getElementById('targetGrasa').textContent = `/${state.goals.dailyGrasa}g`;
+
+    document.getElementById('valFibra').textContent = Math.round(todayFibra) + 'g';
+    document.getElementById('targetFibra').textContent = `/${state.goals.dailyFibra}g`;
+
+
+    // --- 2. TOTALES ACUMULADOS DEL MES ---
+    let monthCal = 0, monthProt = 0, monthCarb = 0, monthGrasa = 0, monthFibra = 0;
+
+    state.foods.forEach(f => {
+      const q = foodMonthlyQty(f);
+      if (q > 0) {
+        const n = foodNutrientsByQty(f, q);
+        monthCal += n.cal;
+        monthProt += n.prot;
+        monthCarb += n.carb;
+        monthGrasa += n.grasa;
+        monthFibra += n.fibra;
+      }
     });
 
     const monthGoalCal = state.goals.dailyCal * totalDaysInMonth;
@@ -484,40 +676,46 @@
     const monthGoalGrasa = state.goals.dailyGrasa * totalDaysInMonth;
     const monthGoalFibra = state.goals.dailyFibra * totalDaysInMonth;
 
-    // Actualizar barras
-    document.getElementById('valCalorias').textContent = `${Math.round(totalCal).toLocaleString('es-MX')} kcal`;
-    document.getElementById('targetCalorias').textContent = `Meta: ${Math.round(monthGoalCal).toLocaleString('es-MX')} kcal`;
-    document.getElementById('barCalorias').style.width = (Math.min(100, Math.round((totalCal / monthGoalCal) * 100)) || 0) + '%';
+    document.getElementById('valDiasMes').textContent = `Día ${dayOfMonth} de ${totalDaysInMonth}`;
+    document.getElementById('valCaloriasMes').textContent = `${Math.round(monthCal).toLocaleString('es-MX')} kcal`;
+    document.getElementById('targetCaloriasMes').textContent = `Meta: ${Math.round(monthGoalCal).toLocaleString('es-MX')} kcal`;
+    document.getElementById('barCaloriasMes').style.width = (Math.min(100, Math.round((monthCal / monthGoalCal) * 100)) || 0) + '%';
 
-    document.getElementById('valProtBar').textContent = `${Math.round(totalProt)}g Prot`;
-    document.getElementById('targetProtBar').textContent = `Meta: ${Math.round(monthGoalProt)}g`;
-    document.getElementById('barProt').style.width = (Math.min(100, Math.round((totalProt / monthGoalProt) * 100)) || 0) + '%';
+    document.getElementById('valProtMes').textContent = `${Math.round(monthProt)}g Prot`;
+    document.getElementById('targetProtMes').textContent = `Meta: ${Math.round(monthGoalProt)}g`;
+    document.getElementById('barProtMes').style.width = (Math.min(100, Math.round((monthProt / monthGoalProt) * 100)) || 0) + '%';
 
-    document.getElementById('valCarbBar').textContent = `${Math.round(totalCarb)}g Carb`;
-    document.getElementById('targetCarbBar').textContent = `Meta: ${Math.round(monthGoalCarb)}g`;
-    document.getElementById('barCarb').style.width = (Math.min(100, Math.round((totalCarb / monthGoalCarb) * 100)) || 0) + '%';
+    document.getElementById('valCarbMes').textContent = `${Math.round(monthCarb)}g Carb`;
+    document.getElementById('targetCarbMes').textContent = `Meta: ${Math.round(monthGoalCarb)}g`;
+    document.getElementById('barCarbMes').style.width = (Math.min(100, Math.round((monthCarb / monthGoalCarb) * 100)) || 0) + '%';
 
-    document.getElementById('valGrasa').textContent = Math.round(totalGrasa) + 'g';
-    document.getElementById('targetGrasa').textContent = `/${Math.round(monthGoalGrasa)}g`;
-    document.getElementById('avgGrasa').textContent = Math.round(totalGrasa / dayOfMonth) + 'g/día';
+    document.getElementById('valGrasaMes').textContent = Math.round(monthGrasa) + 'g';
+    document.getElementById('targetGrasaMes').textContent = `/${Math.round(monthGoalGrasa)}g`;
+    document.getElementById('avgGrasaMes').textContent = Math.round(monthGrasa / dayOfMonth) + 'g/día';
 
-    document.getElementById('valFibra').textContent = Math.round(totalFibra) + 'g';
-    document.getElementById('targetFibra').textContent = `/${Math.round(monthGoalFibra)}g`;
-    document.getElementById('avgFibra').textContent = Math.round(totalFibra / dayOfMonth) + 'g/día';
+    document.getElementById('valFibraMes').textContent = Math.round(monthFibra) + 'g';
+    document.getElementById('targetFibraMes').textContent = `/${Math.round(monthGoalFibra)}g`;
+    document.getElementById('avgFibraMes').textContent = Math.round(monthFibra / dayOfMonth) + 'g/día';
 
-    // 1. RENDERIZAR LISTA DE ALIMENTOS CONSUMIDOS (ENTRIES > 0)
+    // Calificación
+    const scoreData = calculateMonthlyScore(dayOfMonth);
+    document.getElementById('monthlyScore').textContent = `${scoreData.score} / 10`;
+    document.getElementById('monthlyScoreDesc').textContent = scoreData.text;
+
+
+    // --- 3. LISTA DE CONSUMIDOS HOY ---
     const consumedList = document.getElementById('consumedList');
     consumedList.innerHTML = '';
 
-    const consumedFoods = state.foods.filter(f => f.entries.length > 0);
+    const consumedTodayFoods = state.foods.filter(f => foodDailyQty(f, todayISO) > 0);
 
-    if (consumedFoods.length === 0) {
-      consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento este mes.</div>`;
+    if (consumedTodayFoods.length === 0) {
+      consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento el día de hoy.</div>`;
     } else {
-      consumedFoods.forEach(food => consumedList.appendChild(renderFoodRow(food)));
+      consumedTodayFoods.forEach(food => consumedList.appendChild(renderFoodRow(food, true)));
     }
 
-    // 2. RENDERIZAR LISTA DE RESULTADOS DEL BUSCADOR
+    // --- 4. LISTA DE RESULTADOS DEL BUSCADOR ---
     const searchResults = document.getElementById('searchResults');
     searchResults.innerHTML = '';
 
@@ -528,15 +726,16 @@
       if (filtered.length === 0) {
         searchResults.innerHTML = `<div class="no-results">No se encontraron alimentos con "${escapeHtml(searchFilter)}"</div>`;
       } else {
-        filtered.forEach(food => searchResults.appendChild(renderFoodRow(food)));
+        filtered.forEach(food => searchResults.appendChild(renderFoodRow(food, false)));
       }
     }
   }
 
-  function renderFoodRow(food){
-    const totalQty = foodTotalQty(food);
-    const wrapper = document.createElement('div');
+  function renderFoodRow(food, isTodayOnly){
+    const todayISO = todayISOStr();
+    const qtyToShow = isTodayOnly ? foodDailyQty(food, todayISO) : foodMonthlyQty(food);
 
+    const wrapper = document.createElement('div');
     const row = document.createElement('div');
     row.className = 'row';
     row.innerHTML = `
@@ -546,8 +745,8 @@
         <div class="row-sub">${food.cal} kcal / ${food.baseQty}${food.unit}</div>
       </div>
       <div class="row-right">
-        <div class="row-amt">${totalQty > 0 ? (Math.round(totalQty*10)/10) : 0}</div>
-        <div class="row-unit">${food.unit} este mes</div>
+        <div class="row-amt">${qtyToShow > 0 ? (Math.round(qtyToShow*10)/10) : 0}</div>
+        <div class="row-unit">${food.unit} ${isTodayOnly ? 'hoy' : 'este mes'}</div>
       </div>
     `;
 
@@ -593,7 +792,7 @@
 
       const txWrap = detail.querySelector('.tx-wrap');
       if(food.entries.length === 0){
-        txWrap.innerHTML = '<div class="tx-empty">Sin registros este mes</div>';
+        txWrap.innerHTML = '<div class="tx-empty">Sin registros aún</div>';
       } else {
         txWrap.innerHTML = [...food.entries].reverse().map(e => `
           <div class="tx-row">
@@ -621,7 +820,15 @@
     return wrapper;
   }
 
-  // Escuchar entrada de texto en el buscador
+  // Toggle Panel Mensual
+  const monthlyPanel = document.getElementById('monthlyPanel');
+  const btnToggleMonthly = document.getElementById('btnToggleMonthly');
+  btnToggleMonthly.addEventListener('click', () => {
+    const isOpen = monthlyPanel.classList.toggle('open');
+    btnToggleMonthly.textContent = isOpen ? '🙈 Ocultar Rendimiento Mensual' : '📊 Ver Rendimiento Mensual';
+  });
+
+  // Buscador
   document.getElementById('searchInput').addEventListener('input', (e) => {
     searchFilter = e.target.value.trim();
     render();
@@ -630,7 +837,7 @@
   function registerConsumo(foodId, qty){
     const f = state.foods.find(item => item.id === foodId);
     if(!f || !qty || qty <= 0) return;
-    f.entries.push({ id: uid(), qty: Number(qty), date: todayDateStr() });
+    f.entries.push({ id: uid(), qty: Number(qty), date: todayFormattedStr(), isoDate: todayISOStr() });
     openFoodId = f.id;
     save(); render();
   }
@@ -645,7 +852,7 @@
     }
   }
 
-  // Modales y acciones
+  // Modales
   const modalMetas = document.getElementById('modalMetas');
   document.getElementById('btnEditarMetas').addEventListener('click', () => {
     document.getElementById('goalCal').value = state.goals.dailyCal;
@@ -744,7 +951,7 @@
   });
 
   document.getElementById('btnResetMes').addEventListener('click', () => {
-    if(confirm('Esto reiniciará el conteo de todos los alimentos a 0 para comenzar un nuevo mes. ¿Continuar?')){
+    if(confirm('Esto reiniciará todos los registros del mes. ¿Continuar?')){
       state.foods.forEach(f => f.entries = []);
       state.month = currentMonthKey();
       save(); render();
