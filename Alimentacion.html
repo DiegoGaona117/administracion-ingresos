@@ -121,7 +121,6 @@
   }
   .row:last-child{border-bottom:none;}
 
-  /* Botón Estrella Favorito */
   .btn-fav{
     border:none; background:none; font-size:18px; cursor:pointer; color:#CBD5E1; padding:0 4px;
     transition:transform 0.15s ease, color 0.15s ease;
@@ -167,14 +166,10 @@
     padding:6px 0; font-size:13px;
   }
   .tx-desc{ color:var(--ink); font-weight:600; }
-  .tx-date{ color:var(--ink-soft); font-size:11px; }
   .tx-del{ border:none; background:none; color:var(--ink-soft); font-size:13px; cursor:pointer; }
   .tx-del:hover{ color:var(--red); }
 
-  /* Botón de Cierre Manual del Día */
-  .close-day-container{
-    margin:24px 0 10px;
-  }
+  .close-day-container{ margin:24px 0 10px; }
   .btn-close-day{
     width:100%; border:none; background:var(--ink); color:#fff;
     border-radius:14px; padding:14px; font-size:14px; font-weight:700;
@@ -277,7 +272,7 @@
     </div>
   </div>
 
-  <!-- PANEL DIARIO (PRINCIPAL) -->
+  <!-- PANEL DIARIO -->
   <div class="summary-card">
     <div class="summary-header">
       <span class="summary-title">Consumo del Día Actual</span>
@@ -452,39 +447,39 @@
 
 <script>
 (function(){
-  const STORAGE_KEY = 'appNutricionDiaria_v8';
+  const STORAGE_KEY = 'appNutricionDiaria_v10';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 
   function defaultFoods(){
     return [
-      { id: uid(), name: 'Huevo', icon: '🥚', unit: 'pz', baseQty: 1, cal: 72, prot: 6.3, carb: 0.4, grasa: 4.8, fibra: 0, fav: true, quick: [1, 2, 3] },
-      { id: uid(), name: 'Frijoles cocidos', icon: '🫘', unit: 'g', baseQty: 100, cal: 95, prot: 6.0, carb: 17.0, grasa: 0.5, fibra: 5.5, fav: true, quick: [100, 150, 200] },
-      { id: uid(), name: 'Atún en agua', icon: '🐟', unit: 'lata', baseQty: 1, cal: 116, prot: 26.0, carb: 0.0, grasa: 1.0, fibra: 0, fav: true, quick: [0.5, 1, 2] },
-      { id: uid(), name: 'Tortillas de maíz', icon: '🌮', unit: 'pz', baseQty: 1, cal: 52, prot: 1.4, carb: 11.0, grasa: 0.7, fibra: 1.5, fav: true, quick: [1, 2, 3, 4] },
-      { id: uid(), name: 'Sardinas en jitomate', icon: '🥫', unit: 'lata', baseQty: 1, cal: 190, prot: 22.0, carb: 2.0, grasa: 10.0, fibra: 0, fav: false, quick: [0.5, 1] },
-      { id: uid(), name: 'Filete de pescado / Tilapia', icon: '🐠', unit: 'g', baseQty: 100, cal: 96, prot: 20.0, carb: 0.0, grasa: 1.7, fibra: 0, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Claras de huevo', icon: '🍳', unit: 'ml', baseQty: 100, cal: 52, prot: 11.0, carb: 0.7, grasa: 0.2, fibra: 0, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Proteína en polvo', icon: '🥤', unit: 'scoop', baseQty: 1, cal: 120, prot: 24.0, carb: 2.0, grasa: 1.5, fibra: 0, fav: false, quick: [1, 2] },
-      { id: uid(), name: 'Lentejas cocidas', icon: '🍲', unit: 'g', baseQty: 100, cal: 116, prot: 9.0, carb: 20.0, grasa: 0.4, fibra: 7.9, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Garbanzos cocidos', icon: '🧆', unit: 'g', baseQty: 100, cal: 164, prot: 8.9, carb: 27.0, grasa: 2.6, fibra: 7.6, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Soya texturizada (seca)', icon: '🌾', unit: 'g', baseQty: 50, cal: 168, prot: 25.0, carb: 15.0, grasa: 0.6, fibra: 8.0, fav: false, quick: [30, 50, 80] },
-      { id: uid(), name: 'Queso fresco / Panela', icon: '🧀', unit: 'g', baseQty: 100, cal: 240, prot: 18.0, carb: 3.0, grasa: 17.0, fibra: 0, fav: false, quick: [30, 50, 100] },
-      { id: uid(), name: 'Queso Cottage', icon: '🥣', unit: 'g', baseQty: 100, cal: 98, prot: 11.0, carb: 3.4, grasa: 4.3, fibra: 0, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Yogurt griego natural', icon: '🍦', unit: 'g', baseQty: 100, cal: 59, prot: 10.0, carb: 3.6, grasa: 0.4, fibra: 0, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Leche entera / Semidescremada', icon: '🥛', unit: 'ml', baseQty: 250, cal: 130, prot: 8.5, carb: 12.0, grasa: 5.0, fibra: 0, fav: false, quick: [200, 250, 500] },
-      { id: uid(), name: 'Avena', icon: '🥣', unit: 'g', baseQty: 100, cal: 389, prot: 16.9, carb: 66.3, grasa: 6.9, fibra: 10.6, fav: false, quick: [40, 60, 80] },
-      { id: uid(), name: 'Arroz cocido', icon: '🍚', unit: 'g', baseQty: 100, cal: 130, prot: 2.7, carb: 28.0, grasa: 0.3, fibra: 0.4, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Papas', icon: '🥔', unit: 'g', baseQty: 100, cal: 77, prot: 2.0, carb: 17.0, grasa: 0.1, fibra: 2.2, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Camote cocido', icon: '🍠', unit: 'g', baseQty: 100, cal: 86, prot: 1.6, carb: 20.0, grasa: 0.1, fibra: 3.0, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Pasta cocida', icon: '🍝', unit: 'g', baseQty: 100, cal: 131, prot: 5.0, carb: 25.0, grasa: 1.1, fibra: 1.8, fav: false, quick: [100, 150, 200] },
-      { id: uid(), name: 'Bolillo', icon: '🥖', unit: 'pz', baseQty: 1, cal: 183, prot: 5.7, carb: 37.0, grasa: 1.4, fibra: 1.6, fav: false, quick: [0.5, 1] },
-      { id: uid(), name: 'Cacahuates', icon: '🥜', unit: 'g', baseQty: 100, cal: 567, prot: 25.8, carb: 16.1, grasa: 49.2, fibra: 8.5, fav: false, quick: [30, 50] },
-      { id: uid(), name: 'Crema de cacahuate', icon: '🍯', unit: 'g', baseQty: 30, cal: 188, prot: 8.0, carb: 6.0, grasa: 16.0, fibra: 2.0, fav: false, quick: [15, 30] },
-      { id: uid(), name: 'Aguacate', icon: '🥑', unit: 'g', baseQty: 100, cal: 160, prot: 2.0, carb: 8.5, grasa: 14.7, fibra: 6.7, fav: false, quick: [50, 100] },
-      { id: uid(), name: 'Plátano', icon: '🍌', unit: 'pz', baseQty: 1, cal: 105, prot: 1.3, carb: 27.0, grasa: 0.3, fibra: 3.1, fav: false, quick: [1, 2] },
-      { id: uid(), name: 'Manzana', icon: '🍎', unit: 'pz', baseQty: 1, cal: 95, prot: 0.5, carb: 25.0, grasa: 0.3, fibra: 4.4, fav: false, quick: [1] },
-      { id: uid(), name: 'Jitomate', icon: '🍅', unit: 'g', baseQty: 100, cal: 18, prot: 0.9, carb: 3.9, grasa: 0.2, fibra: 1.2, fav: false, quick: [50, 100] },
-      { id: uid(), name: 'Nopales', icon: '🌵', unit: 'g', baseQty: 100, cal: 16, prot: 1.4, carb: 3.3, grasa: 0.1, fibra: 2.2, fav: false, quick: [100, 200] }
+      { id: 'huevo', name: 'Huevo', icon: '🥚', unit: 'pz', baseQty: 1, cal: 72, prot: 6.3, carb: 0.4, grasa: 4.8, fibra: 0, fav: true, quick: [1, 2, 3] },
+      { id: 'frijoles', name: 'Frijoles cocidos', icon: '🫘', unit: 'g', baseQty: 100, cal: 95, prot: 6.0, carb: 17.0, grasa: 0.5, fibra: 5.5, fav: true, quick: [100, 150, 200] },
+      { id: 'atun', name: 'Atún en agua', icon: '🐟', unit: 'lata', baseQty: 1, cal: 116, prot: 26.0, carb: 0.0, grasa: 1.0, fibra: 0, fav: true, quick: [0.5, 1, 2] },
+      { id: 'tortillas', name: 'Tortillas de maíz', icon: '🌮', unit: 'pz', baseQty: 1, cal: 52, prot: 1.4, carb: 11.0, grasa: 0.7, fibra: 1.5, fav: true, quick: [1, 2, 3, 4] },
+      { id: 'sardinas', name: 'Sardinas en jitomate', icon: '🥫', unit: 'lata', baseQty: 1, cal: 190, prot: 22.0, carb: 2.0, grasa: 10.0, fibra: 0, fav: false, quick: [0.5, 1] },
+      { id: 'filete_pescado', name: 'Filete de pescado / Tilapia', icon: '🐠', unit: 'g', baseQty: 100, cal: 96, prot: 20.0, carb: 0.0, grasa: 1.7, fibra: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'claras', name: 'Claras de huevo', icon: '🍳', unit: 'ml', baseQty: 100, cal: 52, prot: 11.0, carb: 0.7, grasa: 0.2, fibra: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'proteina', name: 'Proteína en polvo', icon: '🥤', unit: 'scoop', baseQty: 1, cal: 120, prot: 24.0, carb: 2.0, grasa: 1.5, fibra: 0, fav: false, quick: [1, 2] },
+      { id: 'lentejas', name: 'Lentejas cocidas', icon: '🍲', unit: 'g', baseQty: 100, cal: 116, prot: 9.0, carb: 20.0, grasa: 0.4, fibra: 7.9, fav: false, quick: [100, 150, 200] },
+      { id: 'garbanzos', name: 'Garbanzos cocidos', icon: '🧆', unit: 'g', baseQty: 100, cal: 164, prot: 8.9, carb: 27.0, grasa: 2.6, fibra: 7.6, fav: false, quick: [100, 150, 200] },
+      { id: 'soya', name: 'Soya texturizada (seca)', icon: '🌾', unit: 'g', baseQty: 50, cal: 168, prot: 25.0, carb: 15.0, grasa: 0.6, fibra: 8.0, fav: false, quick: [30, 50, 80] },
+      { id: 'queso_panela', name: 'Queso fresco / Panela', icon: '🧀', unit: 'g', baseQty: 100, cal: 240, prot: 18.0, carb: 3.0, grasa: 17.0, fibra: 0, fav: false, quick: [30, 50, 100] },
+      { id: 'queso_cottage', name: 'Queso Cottage', icon: '🥣', unit: 'g', baseQty: 100, cal: 98, prot: 11.0, carb: 3.4, grasa: 4.3, fibra: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'yogurt', name: 'Yogurt griego natural', icon: '🍦', unit: 'g', baseQty: 100, cal: 59, prot: 10.0, carb: 3.6, grasa: 0.4, fibra: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'leche', name: 'Leche entera / Semidescremada', icon: '🥛', unit: 'ml', baseQty: 250, cal: 130, prot: 8.5, carb: 12.0, grasa: 5.0, fibra: 0, fav: false, quick: [200, 250, 500] },
+      { id: 'avena', name: 'Avena', icon: '🥣', unit: 'g', baseQty: 100, cal: 389, prot: 16.9, carb: 66.3, grasa: 6.9, fibra: 10.6, fav: false, quick: [40, 60, 80] },
+      { id: 'arroz', name: 'Arroz cocido', icon: '🍚', unit: 'g', baseQty: 100, cal: 130, prot: 2.7, carb: 28.0, grasa: 0.3, fibra: 0.4, fav: false, quick: [100, 150, 200] },
+      { id: 'papas', name: 'Papas', icon: '🥔', unit: 'g', baseQty: 100, cal: 77, prot: 2.0, carb: 17.0, grasa: 0.1, fibra: 2.2, fav: false, quick: [100, 150, 200] },
+      { id: 'camote', name: 'Camote cocido', icon: '🍠', unit: 'g', baseQty: 100, cal: 86, prot: 1.6, carb: 20.0, grasa: 0.1, fibra: 3.0, fav: false, quick: [100, 150, 200] },
+      { id: 'pasta', name: 'Pasta cocida', icon: '🍝', unit: 'g', baseQty: 100, cal: 131, prot: 5.0, carb: 25.0, grasa: 1.1, fibra: 1.8, fav: false, quick: [100, 150, 200] },
+      { id: 'bolillo', name: 'Bolillo', icon: '🥖', unit: 'pz', baseQty: 1, cal: 183, prot: 5.7, carb: 37.0, grasa: 1.4, fibra: 1.6, fav: false, quick: [0.5, 1] },
+      { id: 'cacahuates', name: 'Cacahuates', icon: '🥜', unit: 'g', baseQty: 100, cal: 567, prot: 25.8, carb: 16.1, grasa: 49.2, fibra: 8.5, fav: false, quick: [30, 50] },
+      { id: 'crema_cacahuate', name: 'Crema de cacahuate', icon: '🍯', unit: 'g', baseQty: 30, cal: 188, prot: 8.0, carb: 6.0, grasa: 16.0, fibra: 2.0, fav: false, quick: [15, 30] },
+      { id: 'aguacate', name: 'Aguacate', icon: '🥑', unit: 'g', baseQty: 100, cal: 160, prot: 2.0, carb: 8.5, grasa: 14.7, fibra: 6.7, fav: false, quick: [50, 100] },
+      { id: 'platano', name: 'Plátano', icon: '🍌', unit: 'pz', baseQty: 1, cal: 105, prot: 1.3, carb: 27.0, grasa: 0.3, fibra: 3.1, fav: false, quick: [1, 2] },
+      { id: 'manzana', name: 'Manzana', icon: '🍎', unit: 'pz', baseQty: 1, cal: 95, prot: 0.5, carb: 25.0, grasa: 0.3, fibra: 4.4, fav: false, quick: [1] },
+      { id: 'calabacitas', name: 'Calabacitas cocidas', icon: '🥒', unit: 'g', baseQty: 100, cal: 15, prot: 1.1, carb: 3.1, grasa: 0.2, fibra: 1.0, fav: false, quick: [100, 150, 200] },
+      { id: 'nopales', name: 'Nopales', icon: '🌵', unit: 'g', baseQty: 100, cal: 16, prot: 1.4, carb: 3.3, grasa: 0.1, fibra: 2.2, fav: false, quick: [100, 200] }
     ];
   }
 
@@ -492,8 +487,8 @@
     return {
       currentDay: 1,
       goals: { dailyCal: 2350, dailyProt: 100, dailyCarb: 310, dailyGrasa: 65, dailyFibra: 30 },
-      currentDayEntries: [], // { id, foodId, qty }
-      closedDays: [], // Lista de días finalizados [{ dayNum, cal, prot, carb, grasa, fibra }]
+      currentDayEntries: [],
+      closedDays: [],
       foods: defaultFoods()
     };
   }
@@ -533,7 +528,6 @@
 
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
 
-  // Calcular la calificación mensual basada en los días cerrados
   function calculateMonthlyScore(){
     if (state.closedDays.length === 0) return { score: '10.0', text: 'Sin días cerrados aún' };
 
@@ -559,7 +553,6 @@
     document.getElementById('valDiaNumero').textContent = `Día ${state.currentDay} (En curso)`;
     document.getElementById('lblMetaProt').textContent = `${state.goals.dailyProt}g/día`;
 
-    // --- 1. TOTALES DE HOY ---
     let todayCal = 0, todayProt = 0, todayCarb = 0, todayGrasa = 0, todayFibra = 0;
 
     state.currentDayEntries.forEach(entry => {
@@ -592,8 +585,6 @@
     document.getElementById('valFibra').textContent = Math.round(todayFibra) + 'g';
     document.getElementById('targetFibra').textContent = `/${state.goals.dailyFibra}g`;
 
-
-    // --- 2. TOTALES MENSUALES ACUMULADOS ---
     let monthCal = 0, monthProt = 0, monthCarb = 0, monthGrasa = 0, monthFibra = 0;
 
     state.closedDays.forEach(d => {
@@ -634,15 +625,12 @@
     document.getElementById('monthlyScore').textContent = `${scoreData.score} / 10`;
     document.getElementById('monthlyScoreDesc').textContent = scoreData.text;
 
-
-    // --- 3. LISTA DE CONSUMIDOS HOY ---
     const consumedList = document.getElementById('consumedList');
     consumedList.innerHTML = '';
 
     if (state.currentDayEntries.length === 0) {
       consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento hoy.</div>`;
     } else {
-      // Agrupar entradas por alimento
       const aggregated = {};
       state.currentDayEntries.forEach(entry => {
         if (!aggregated[entry.foodId]) aggregated[entry.foodId] = 0;
@@ -655,7 +643,6 @@
       });
     }
 
-    // --- 4. LISTA GENERAL DE ALIMENTOS (FAVORITOS PRIMERO) ---
     const foodList = document.getElementById('foodList');
     foodList.innerHTML = '';
 
@@ -692,7 +679,6 @@
       </div>
     `;
 
-    // Botón Favorito
     if (!isConsumedSection) {
       const favBtn = row.querySelector('[data-fav]');
       favBtn.addEventListener('click', (e) => {
@@ -773,7 +759,6 @@
     return wrapper;
   }
 
-  // Toggle Panel Mensual
   const monthlyPanel = document.getElementById('monthlyPanel');
   const btnToggleMonthly = document.getElementById('btnToggleMonthly');
   btnToggleMonthly.addEventListener('click', () => {
@@ -781,7 +766,6 @@
     btnToggleMonthly.textContent = isOpen ? '🙈 Ocultar Rendimiento Mensual' : '📊 Ver Rendimiento Mensual';
   });
 
-  // Buscador
   document.getElementById('searchInput').addEventListener('input', (e) => {
     searchFilter = e.target.value.trim();
     render();
@@ -795,7 +779,6 @@
     save(); render();
   }
 
-  // ACCIÓN: CERRAR DÍA MANUALMENTE
   document.getElementById('btnCloseDay').addEventListener('click', () => {
     if (state.currentDayEntries.length === 0) {
       if (!confirm('No has registrado ningún alimento el día de hoy. ¿Deseas cerrar el día con 0 calorías?')) return;
@@ -843,7 +826,6 @@
     }
   }
 
-  // Modales
   const modalMetas = document.getElementById('modalMetas');
   document.getElementById('btnEditarMetas').addEventListener('click', () => {
     document.getElementById('goalCal').value = state.goals.dailyCal;
