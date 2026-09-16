@@ -113,6 +113,22 @@
     padding:7px 13px; border-radius:20px; cursor:pointer;
   }
 
+  .meal-tabs{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px; }
+  .meal-tab{
+    display:flex; align-items:center; gap:5px; flex:0 0 auto;
+    border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft);
+    font-size:12.5px; font-weight:700; padding:8px 12px; border-radius:20px;
+    cursor:pointer; white-space:nowrap; font-family:'Inter',sans-serif;
+  }
+  .meal-tab.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .meal-tab-del{ font-size:11px; opacity:0.65; }
+  .meal-tab-del:hover{ opacity:1; }
+  .section-header{
+    font-size:11px; font-weight:800; color:var(--ink-soft); text-transform:uppercase;
+    letter-spacing:0.05em; margin:14px 0 6px; padding-top:10px; border-top:1px solid var(--line);
+  }
+  .section-header:first-child{ margin-top:0; padding-top:0; border-top:none; }
+
   .search-box{
     position:relative; margin-bottom:12px;
   }
@@ -180,6 +196,7 @@
     padding:6px 0; font-size:13px;
   }
   .tx-desc{ color:var(--ink); font-weight:600; }
+  .tx-sec{ color:var(--ink-soft); font-weight:600; font-size:11px; }
   .tx-del{ border:none; background:none; color:var(--ink-soft); font-size:13px; cursor:pointer; }
   .tx-del:hover{ color:var(--red); }
 
@@ -590,7 +607,9 @@
       currentDayEntries: [],
       closedDays: [],
       monthHistory: [],
-      foods: defaultFoods()
+      foods: defaultFoods(),
+      mealSections: ['Desayuno', 'Comida', 'Cena', 'Snacks'],
+      activeSection: 'Desayuno'
     };
   }
 
@@ -606,6 +625,10 @@
       if(!data.currentDayDate) data.currentDayDate = todayISO();
       if(!data.foods) data.foods = defaultFoods();
       if(!data.goals) data.goals = defaultData().goals;
+      if(!data.mealSections || !Array.isArray(data.mealSections) || data.mealSections.length === 0){
+        data.mealSections = ['Desayuno', 'Comida', 'Cena', 'Snacks'];
+      }
+      if(!data.activeSection) data.activeSection = data.mealSections[0] || 'todos';
       // Agrega alimentos nuevos del catálogo (ej. frutas) sin tocar los que el usuario ya tiene/editó
       const existingIds = new Set(data.foods.map(f => f.id));
       defaultFoods().forEach(df => {
@@ -823,6 +846,92 @@
     return { score: finalScore, text };
   }
 
+  function renderMealTabs(){
+    const wrap = document.getElementById('mealTabs');
+    wrap.innerHTML = '';
+
+    function makeTab(label, value, deletable){
+      const btn = document.createElement('button');
+      btn.className = 'meal-tab' + (state.activeSection === value ? ' active' : '');
+      btn.type = 'button';
+
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = label;
+      btn.appendChild(labelSpan);
+
+      if(deletable){
+        const del = document.createElement('span');
+        del.className = 'meal-tab-del';
+        del.textContent = '✕';
+        del.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if(confirm(`¿Eliminar la sección "${label}"? Los alimentos ya registrados en ella se conservan.`)){
+            state.mealSections = state.mealSections.filter(s => s !== value);
+            if(state.activeSection === value){
+              state.activeSection = state.mealSections[0] || 'todos';
+            }
+            save(); render();
+          }
+        });
+        btn.appendChild(del);
+      }
+
+      btn.addEventListener('click', () => {
+        state.activeSection = value;
+        save(); render();
+      });
+
+      wrap.appendChild(btn);
+    }
+
+    makeTab('Todos', 'todos', false);
+    state.mealSections.forEach(sec => makeTab(sec, sec, true));
+  }
+
+  function renderConsumedList(){
+    const consumedList = document.getElementById('consumedList');
+    consumedList.innerHTML = '';
+
+    if (state.currentDayEntries.length === 0) {
+      consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento hoy.</div>`;
+      return;
+    }
+
+    function appendAggregatedRows(entries){
+      const aggregated = {};
+      entries.forEach(e => { aggregated[e.foodId] = (aggregated[e.foodId] || 0) + e.qty; });
+      Object.keys(aggregated).forEach(foodId => {
+        const food = state.foods.find(f => f.id === foodId);
+        if(food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId], true));
+      });
+    }
+
+    if(state.activeSection === 'todos'){
+      const order = [...state.mealSections, 'Sin sección'];
+      let anyShown = false;
+      order.forEach(sec => {
+        const entries = state.currentDayEntries.filter(e => (e.section || 'Sin sección') === sec);
+        if(entries.length === 0) return;
+        anyShown = true;
+        const header = document.createElement('div');
+        header.className = 'section-header';
+        header.textContent = sec;
+        consumedList.appendChild(header);
+        appendAggregatedRows(entries);
+      });
+      if(!anyShown){
+        consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento hoy.</div>`;
+      }
+    } else {
+      const entries = state.currentDayEntries.filter(e => (e.section || 'Sin sección') === state.activeSection);
+      if(entries.length === 0){
+        consumedList.innerHTML = `<div class="empty-consumed">Nada registrado en "${escapeHtml(state.activeSection)}" todavía.</div>`;
+        return;
+      }
+      appendAggregatedRows(entries);
+    }
+  }
+
   function render(){
     document.getElementById('valDiaNumero').textContent = `${formatDate(state.currentDayDate)} (En curso)`;
     document.getElementById('lblMetaProt').textContent = `${state.goals.dailyProt}g/día`;
@@ -949,23 +1058,8 @@
       extraIds.forEach(id => { document.getElementById(id).textContent = '--'; });
     }
 
-    const consumedList = document.getElementById('consumedList');
-    consumedList.innerHTML = '';
-
-    if (state.currentDayEntries.length === 0) {
-      consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento hoy.</div>`;
-    } else {
-      const aggregated = {};
-      state.currentDayEntries.forEach(entry => {
-        if (!aggregated[entry.foodId]) aggregated[entry.foodId] = 0;
-        aggregated[entry.foodId] += entry.qty;
-      });
-
-      Object.keys(aggregated).forEach(foodId => {
-        const food = state.foods.find(f => f.id === foodId);
-        if (food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId], true));
-      });
-    }
+    renderMealTabs();
+    renderConsumedList();
 
     const foodList = document.getElementById('foodList');
     foodList.innerHTML = '';
@@ -1066,6 +1160,7 @@
           <div class="tx-row">
             <div>
               <span class="tx-desc">+${formatQty(e.qty)} ${food.unit}</span>
+              <span class="tx-sec"> · ${escapeHtml(e.section || 'Sin sección')}</span>
             </div>
             <button class="tx-del" data-tx="${e.id}">✕</button>
           </div>
@@ -1102,10 +1197,25 @@
   function registerConsumo(foodId, qty){
     const f = state.foods.find(item => item.id === foodId);
     if(!f || !qty || qty <= 0) return;
-    state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty) });
+    const section = state.activeSection === 'todos' ? (state.mealSections[0] || 'Sin sección') : state.activeSection;
+    state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty), section });
     openFoodId = f.id;
     save(); render();
   }
+
+  document.getElementById('btnAddMeal').addEventListener('click', () => {
+    const name = prompt('Nombre de la nueva sección (ej. Colación, Post-entreno):');
+    if(name === null) return;
+    const trimmed = name.trim().slice(0, 20);
+    if(!trimmed) return;
+    if(state.mealSections.some(s => s.toLowerCase() === trimmed.toLowerCase())){
+      alert('Ya existe una sección con ese nombre.');
+      return;
+    }
+    state.mealSections.push(trimmed);
+    state.activeSection = trimmed;
+    save(); render();
+  });
 
   document.getElementById('btnCloseDay').addEventListener('click', () => {
     if (state.currentDayEntries.length === 0) {
@@ -1140,6 +1250,7 @@
     state.currentDay += 1;
     state.currentDayDate = todayISO();
     state.currentDayEntries = [];
+    state.activeSection = state.mealSections[0] || 'todos';
     openFoodId = null;
 
     save(); render();
