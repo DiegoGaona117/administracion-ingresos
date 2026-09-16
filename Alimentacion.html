@@ -72,6 +72,7 @@
   .progress-bar.cal.over{ background:var(--red); }
   .progress-bar.prot{ background:var(--green); }
   .progress-bar.carb{ background:var(--gold); }
+  .progress-bar.carb.over{ background:var(--red); }
 
   .macro-grid{
     display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
@@ -229,49 +230,49 @@
 
     <div class="summary-card">
       <div class="summary-header">
-        <span class="summary-title">Acumulado Mensual</span>
+        <span class="summary-title">Promedio Diario del Mes</span>
         <span class="summary-days" id="valDiasMes">Días cerrados: 0</span>
       </div>
       
       <div class="main-stat">
         <div class="stat-labels">
-          <span class="num" id="valCaloriasMes">0 kcal</span>
-          <span class="target-text" id="targetCaloriasMes">Meta: 0 kcal</span>
+          <span class="num" id="valCaloriasMes">0 kcal/día</span>
+          <span class="target-text" id="targetCaloriasMes">0% de tu meta</span>
         </div>
         <div class="progress-bg"><div class="progress-bar cal" id="barCaloriasMes"></div></div>
       </div>
 
       <div class="main-stat">
         <div class="stat-labels">
-          <span class="num" style="font-size:18px;" id="valProtMes">0g Prot</span>
-          <span class="target-text" id="targetProtMes">Meta: 0g</span>
+          <span class="num" style="font-size:18px;" id="valProtMes">0g Prot/día</span>
+          <span class="target-text" id="targetProtMes">0% de tu meta</span>
         </div>
         <div class="progress-bg"><div class="progress-bar prot" id="barProtMes"></div></div>
       </div>
 
       <div class="main-stat">
         <div class="stat-labels">
-          <span class="num" style="font-size:18px;" id="valCarbMes">0g Carb</span>
-          <span class="target-text" id="targetCarbMes">Meta: 0g</span>
+          <span class="num" style="font-size:18px;" id="valCarbMes">0g Carb/día</span>
+          <span class="target-text" id="targetCarbMes">0% de tu meta</span>
         </div>
         <div class="progress-bg"><div class="progress-bar carb" id="barCarbMes"></div></div>
       </div>
 
       <div class="macro-grid">
         <div class="macro-item">
-          <span class="macro-lbl">Grasas Totales</span>
+          <span class="macro-lbl">Grasas / día</span>
           <span class="macro-val" id="valGrasaMes">0g</span>
-          <span class="macro-target" id="targetGrasaMes">/0g</span>
-          <span class="macro-avg" id="avgGrasaMes">0g/día</span>
+          <span class="macro-target" id="targetGrasaMes">0% de meta</span>
         </div>
         <div class="macro-item">
-          <span class="macro-lbl">Fibra Total</span>
+          <span class="macro-lbl">Fibra / día</span>
           <span class="macro-val" id="valFibraMes">0g</span>
-          <span class="macro-target" id="targetFibraMes">/0g</span>
-          <span class="macro-avg" id="avgFibraMes">0g/día</span>
+          <span class="macro-target" id="targetFibraMes">0% de meta</span>
         </div>
       </div>
     </div>
+
+    <p class="field-hint" style="text-align:center; margin:-6px 0 4px;">Proteína y fibra: pasarte de la meta suma. Calorías, carbos y grasas: pasarte resta más que quedarte corto.</p>
   </div>
 
   <!-- PANEL DIARIO -->
@@ -624,10 +625,40 @@
   }
 
   // Componente de score simétrico: castiga tanto quedarse corto como excederse.
-  // 1.0 = justo en la meta, 0.0 = el doble (o el 0%) de la meta.
+  // 1.0 = justo en la meta, 0.0 = el doble (o el 0%) de la meta. Se usa para calorías,
+  // donde la meta ya contempla un déficit/mantenimiento específico.
   function symmetricScore(value, goal){
     if(!goal || goal <= 0) return 1;
     return Math.max(0, 1 - Math.abs(value - goal) / goal);
+  }
+
+  // "Mientras más, mejor" (proteína, fibra): llegar o superar la meta da el máximo puntaje.
+  function minGoalScore(value, goal){
+    if(!goal || goal <= 0) return 1;
+    return Math.min(1, value / goal);
+  }
+
+  // "Techo con tolerancia" (carbohidratos, grasas): quedarte corto resta poco y de forma lineal,
+  // pero pasarte de la meta resta el doble de rápido.
+  function ceilingToleranceScore(value, goal, overPenaltyMultiplier = 2){
+    if(!goal || goal <= 0) return 1;
+    if(value <= goal) return value / goal;
+    const excess = (value - goal) / goal;
+    return Math.max(0, 1 - overPenaltyMultiplier * excess);
+  }
+
+  // Pesos del score final: proteína y calorías pesan más porque son la prioridad;
+  // fibra pesa menos porque es el nutriente secundario.
+  const SCORE_WEIGHTS = { prot: 0.30, cal: 0.25, carb: 0.20, grasa: 0.15, fibra: 0.10 };
+
+  function dayScoreComponents(d){
+    return {
+      prot: minGoalScore(d.prot, state.goals.dailyProt),
+      cal: symmetricScore(d.cal, state.goals.dailyCal),
+      carb: ceilingToleranceScore(d.carb, state.goals.dailyCarb),
+      grasa: ceilingToleranceScore(d.grasa, state.goals.dailyGrasa),
+      fibra: minGoalScore(d.fibra, state.goals.dailyFibra)
+    };
   }
 
   function calculateMonthlyScore(){
@@ -635,13 +666,9 @@
 
     let totalDayScores = 0;
     state.closedDays.forEach(d => {
-      // Calorías: penaliza excederse igual que quedarse corto (antes solo premiaba llegar o pasarse la meta)
-      const calScore = symmetricScore(d.cal, state.goals.dailyCal);
-      // Proteína: llegar o superar la meta sigue contando como pleno (no es "malo" pasarse de proteína)
-      const protScore = Math.min(1, d.prot / state.goals.dailyProt);
-      // Carbohidratos: también simétrico, para no premiar excesos
-      const carbScore = symmetricScore(d.carb, state.goals.dailyCarb);
-      const dayScore = (protScore * 0.4) + (calScore * 0.4) + (carbScore * 0.2);
+      const c = dayScoreComponents(d);
+      const dayScore = (c.prot * SCORE_WEIGHTS.prot) + (c.cal * SCORE_WEIGHTS.cal) +
+        (c.carb * SCORE_WEIGHTS.carb) + (c.grasa * SCORE_WEIGHTS.grasa) + (c.fibra * SCORE_WEIGHTS.fibra);
       totalDayScores += dayScore;
     });
 
@@ -703,30 +730,41 @@
     });
 
     const totalClosed = state.closedDays.length || 1;
-    const targetMonthCal = state.goals.dailyCal * totalClosed;
-    const targetMonthProt = state.goals.dailyProt * totalClosed;
-    const targetMonthCarb = state.goals.dailyCarb * totalClosed;
+    const avgCal = monthCal / totalClosed;
+    const avgProt = monthProt / totalClosed;
+    const avgCarb = monthCarb / totalClosed;
+    const avgGrasa = monthGrasa / totalClosed;
+    const avgFibra = monthFibra / totalClosed;
+
+    const pctCal = Math.round((avgCal / state.goals.dailyCal) * 100) || 0;
+    const pctProt = Math.round((avgProt / state.goals.dailyProt) * 100) || 0;
+    const pctCarb = Math.round((avgCarb / state.goals.dailyCarb) * 100) || 0;
+    const pctGrasa = Math.round((avgGrasa / state.goals.dailyGrasa) * 100) || 0;
+    const pctFibra = Math.round((avgFibra / state.goals.dailyFibra) * 100) || 0;
 
     document.getElementById('valDiasMes').textContent = `Días cerrados: ${state.closedDays.length}`;
-    document.getElementById('valCaloriasMes').textContent = `${Math.round(monthCal).toLocaleString('es-MX')} kcal`;
-    document.getElementById('targetCaloriasMes').textContent = `Meta: ${Math.round(targetMonthCal).toLocaleString('es-MX')} kcal`;
-    document.getElementById('barCaloriasMes').style.width = (Math.min(100, Math.round((monthCal / targetMonthCal) * 100)) || 0) + '%';
 
-    document.getElementById('valProtMes').textContent = `${Math.round(monthProt)}g Prot`;
-    document.getElementById('targetProtMes').textContent = `Meta: ${Math.round(targetMonthProt)}g`;
-    document.getElementById('barProtMes').style.width = (Math.min(100, Math.round((monthProt / targetMonthProt) * 100)) || 0) + '%';
+    document.getElementById('valCaloriasMes').textContent = `${Math.round(avgCal).toLocaleString('es-MX')} kcal/día`;
+    document.getElementById('targetCaloriasMes').textContent = `${pctCal}% de tu meta`;
+    const barCalMes = document.getElementById('barCaloriasMes');
+    barCalMes.style.width = Math.min(100, pctCal) + '%';
+    barCalMes.classList.toggle('over', pctCal > 100);
 
-    document.getElementById('valCarbMes').textContent = `${Math.round(monthCarb)}g Carb`;
-    document.getElementById('targetCarbMes').textContent = `Meta: ${Math.round(targetMonthCarb)}g`;
-    document.getElementById('barCarbMes').style.width = (Math.min(100, Math.round((monthCarb / targetMonthCarb) * 100)) || 0) + '%';
+    document.getElementById('valProtMes').textContent = `${Math.round(avgProt)}g Prot/día`;
+    document.getElementById('targetProtMes').textContent = `${pctProt}% de tu meta`;
+    document.getElementById('barProtMes').style.width = Math.min(100, pctProt) + '%';
 
-    document.getElementById('valGrasaMes').textContent = Math.round(monthGrasa) + 'g';
-    document.getElementById('targetGrasaMes').textContent = `/${Math.round(state.goals.dailyGrasa * totalClosed)}g`;
-    document.getElementById('avgGrasaMes').textContent = Math.round(monthGrasa / totalClosed) + 'g/día';
+    document.getElementById('valCarbMes').textContent = `${Math.round(avgCarb)}g Carb/día`;
+    document.getElementById('targetCarbMes').textContent = `${pctCarb}% de tu meta`;
+    const barCarbMes = document.getElementById('barCarbMes');
+    barCarbMes.style.width = Math.min(100, pctCarb) + '%';
+    barCarbMes.classList.toggle('over', pctCarb > 100);
 
-    document.getElementById('valFibraMes').textContent = Math.round(monthFibra) + 'g';
-    document.getElementById('targetFibraMes').textContent = `/${Math.round(state.goals.dailyFibra * totalClosed)}g`;
-    document.getElementById('avgFibraMes').textContent = Math.round(monthFibra / totalClosed) + 'g/día';
+    document.getElementById('valGrasaMes').textContent = Math.round(avgGrasa) + 'g';
+    document.getElementById('targetGrasaMes').textContent = `${pctGrasa}% de meta`;
+
+    document.getElementById('valFibraMes').textContent = Math.round(avgFibra) + 'g';
+    document.getElementById('targetFibraMes').textContent = `${pctFibra}% de meta`;
 
     const scoreData = calculateMonthlyScore();
     document.getElementById('monthlyScore').textContent = scoreData.score === '--' ? '-- / 10' : `${scoreData.score} / 10`;
