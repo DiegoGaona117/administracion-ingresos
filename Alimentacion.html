@@ -370,14 +370,12 @@
     <button class="btn-edit-goals" id="btnEditarMetas">Ajustar Metas</button>
   </div>
 
-  <!-- PLAN AUTOMÁTICO DE FAVORITOS -->
+  <!-- SECCIONES DE COMIDA -->
   <div class="section-title">
-    <h2>Plan Automático 🎲</h2>
+    <h2>Comidas del Día</h2>
+    <button id="btnAddMeal">+ Agregar sección</button>
   </div>
-  <div class="summary-card" style="gap:10px;">
-    <p class="field-hint" style="margin:0;">Usa hasta 5 de tus alimentos favoritos para completar automáticamente lo que te falta comer hoy, según tus metas restantes.</p>
-    <button class="btn primary" id="btnGenerarPlan" style="width:100%;">🎲 Generar y Registrar Plan del Día</button>
-  </div>
+  <div class="meal-tabs" id="mealTabs"></div>
 
   <!-- SECCIÓN 1: Consumidos HOY -->
   <div class="section-title">
@@ -1108,156 +1106,6 @@
     openFoodId = f.id;
     save(); render();
   }
-
-  // Genera un plan de comida usando hasta 5 alimentos favoritos y lo registra en el día actual,
-  // completando solo lo que falte según tus metas restantes (respeta lo ya consumido hoy).
-  function generarPlanAutomatico(){
-    const favs = state.foods.filter(f => f.fav);
-    if(favs.length === 0){
-      alert('Marca al menos un alimento como favorito (⭐) antes de generar un plan.');
-      return;
-    }
-
-    let curCal = 0, curProt = 0, curCarb = 0, curGrasa = 0, curFibra = 0;
-    state.currentDayEntries.forEach(entry => {
-      const food = state.foods.find(f => f.id === entry.foodId);
-      if(food){
-        const n = foodNutrientsByQty(food, entry.qty);
-        curCal += n.cal; curProt += n.prot; curCarb += n.carb; curGrasa += n.grasa; curFibra += n.fibra;
-      }
-    });
-
-    const remaining = {
-      cal: state.goals.dailyCal - curCal,
-      prot: state.goals.dailyProt - curProt,
-      carb: state.goals.dailyCarb - curCarb,
-      grasa: state.goals.dailyGrasa - curGrasa,
-      fibra: state.goals.dailyFibra - curFibra
-    };
-
-    if(remaining.cal <= 20){
-      alert('Ya casi completaste (o superaste) tu meta calórica de hoy — no hay espacio para generar más comida.');
-      return;
-    }
-
-    // Selecciona ~80% de tu lista de favoritos (en vez de un tope fijo), priorizando variedad:
-    // primero el más denso en cada macro (prot/carb/grasa/fibra), luego rellena con el resto
-    // de favoritos más calóricos hasta cubrir esa porción de la lista.
-    const maxFoods = Math.max(1, Math.ceil(favs.length * 0.8));
-    const densityOf = (food, key) => (!food.cal || food.cal <= 0) ? 0 : (food[key] || 0) / food.cal;
-    const pickBest = (key, excludeIds) => {
-      const candidates = favs.filter(f => !excludeIds.has(f.id) && densityOf(f, key) > 0);
-      if(candidates.length === 0) return null;
-      candidates.sort((a, b) => densityOf(b, key) - densityOf(a, key));
-      return candidates[0];
-    };
-
-    const selectedIds = new Set();
-    const selected = [];
-    ['prot', 'carb', 'grasa', 'fibra'].forEach(key => {
-      const pick = pickBest(key, selectedIds);
-      if(pick){ selectedIds.add(pick.id); selected.push(pick); }
-    });
-    if(selected.length < maxFoods){
-      const rest = favs.filter(f => !selectedIds.has(f.id)).sort((a, b) => (b.cal || 0) - (a.cal || 0));
-      for(const f of rest){
-        if(selected.length >= maxFoods) break;
-        selectedIds.add(f.id); selected.push(f);
-      }
-    }
-
-    if(selected.length === 0){
-      alert('No se pudo generar un plan: revisa que tus alimentos favoritos tengan valores nutricionales cargados.');
-      return;
-    }
-
-    // Reparte cantidades en incrementos prácticos (los mismos de tus botones rápidos), acercándose
-    // paso a paso a las metas restantes usando los mismos pesos que el score mensual. El tope por
-    // alimento es más ajustado y, mientras más cantidad lleva un alimento, menos se prioriza seguir
-    // sumándole (penalización progresiva), para forzar variedad en vez de apilar todo en 2-3 items.
-    const quantities = {};
-    const increments = {};
-    const caps = {};
-    selected.forEach(f => {
-      quantities[f.id] = 0;
-      const minQuick = (f.quick && f.quick.length) ? Math.min(...f.quick) : (f.baseQty * 0.5 || 1);
-      const maxQuick = (f.quick && f.quick.length) ? Math.max(...f.quick) : (f.baseQty * 2 || 2);
-      increments[f.id] = minQuick;
-      caps[f.id] = maxQuick * 2.5;
-    });
-
-    let runCal = 0, runProt = 0, runCarb = 0, runGrasa = 0, runFibra = 0;
-    const W = SCORE_WEIGHTS;
-
-    for(let iter = 0; iter < 300; iter++){
-      const remCal = remaining.cal - runCal;
-      const remProt = remaining.prot - runProt;
-      const remCarb = remaining.carb - runCarb;
-      const remGrasa = remaining.grasa - runGrasa;
-      const remFibra = remaining.fibra - runFibra;
-
-      if(remCal <= remaining.cal * 0.03) break;
-
-      let bestFood = null, bestScore = -Infinity, bestInc = null;
-      selected.forEach(f => {
-        if(quantities[f.id] + increments[f.id] > caps[f.id]) return;
-        const inc = foodNutrientsByQty(f, increments[f.id]);
-        let score = 0;
-        score += W.cal * (remCal > 0 ? Math.min(inc.cal, remCal) : -inc.cal);
-        score += W.prot * (remProt > 0 ? inc.prot : -inc.prot * 0.5);
-        score += W.carb * (remCarb > 0 ? inc.carb : -inc.carb);
-        score += W.grasa * (remGrasa > 0 ? inc.grasa : -inc.grasa);
-        score += W.fibra * (remFibra > 0 ? inc.fibra : 0);
-        // Penalización progresiva: entre más se acerca este alimento a su tope, menos se prioriza
-        score *= (1 - (quantities[f.id] / caps[f.id]));
-        if(score > bestScore){ bestScore = score; bestFood = f; bestInc = inc; }
-      });
-
-      if(!bestFood || bestScore <= 0) break;
-
-      quantities[bestFood.id] += increments[bestFood.id];
-      runCal += bestInc.cal; runProt += bestInc.prot; runCarb += bestInc.carb; runGrasa += bestInc.grasa; runFibra += bestInc.fibra;
-    }
-
-    const appliedItems = [];
-    selected.forEach(f => {
-      const qty = quantities[f.id];
-      if(qty > 0){
-        state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty.toFixed(2)) });
-        appliedItems.push(`${formatQty(qty)} ${f.unit} de ${f.name}`);
-      }
-    });
-
-    if(appliedItems.length === 0){
-      alert('No se encontró una combinación útil con tus favoritos actuales. Marca más variedad como favorito (una fuente de proteína, de carbos, de grasa y de fibra) e inténtalo de nuevo.');
-      return;
-    }
-
-    save(); render();
-
-    const finalCal = curCal + runCal, finalProt = curProt + runProt, finalCarb = curCarb + runCarb, finalGrasa = curGrasa + runGrasa, finalFibra = curFibra + runFibra;
-    const pct = (val, goal) => goal > 0 ? Math.round((val / goal) * 100) : 0;
-    const pctCalFinal = pct(finalCal, state.goals.dailyCal);
-
-    let aviso = '';
-    if(pctCalFinal < 90){
-      aviso = `\n\n⚠️ No se alcanzó el 100% de tu meta calórica solo con estos favoritos (llegó a ${pctCalFinal}%). Marca más variedad como favorito para que el plan pueda completar más.`;
-    }
-
-    alert(
-      `Plan generado y registrado ✅\n\n` +
-      appliedItems.join('\n') +
-      `\n\nTotal del día:\n` +
-      `Calorías: ${Math.round(finalCal)} kcal (${pctCalFinal}%)\n` +
-      `Proteína: ${Math.round(finalProt)}g (${pct(finalProt, state.goals.dailyProt)}%)\n` +
-      `Carbohidratos: ${Math.round(finalCarb)}g (${pct(finalCarb, state.goals.dailyCarb)}%)\n` +
-      `Grasas: ${Math.round(finalGrasa)}g (${pct(finalGrasa, state.goals.dailyGrasa)}%)\n` +
-      `Fibra: ${Math.round(finalFibra)}g (${pct(finalFibra, state.goals.dailyFibra)}%)` +
-      aviso
-    );
-  }
-
-  document.getElementById('btnGenerarPlan').addEventListener('click', generarPlanAutomatico);
 
   document.getElementById('btnCloseDay').addEventListener('click', () => {
     if (state.currentDayEntries.length === 0) {
