@@ -73,6 +73,9 @@
   .progress-bar.prot{ background:var(--green); }
   .progress-bar.carb{ background:var(--gold); }
   .progress-bar.carb.over{ background:var(--red); }
+  .progress-bar.grasa{ background:#8B5CF6; }
+  .progress-bar.grasa.over{ background:var(--red); }
+  .progress-bar.fibra{ background:#0EA5A0; }
 
   .macro-grid{
     display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
@@ -83,6 +86,14 @@
   .macro-val{ font-size:13.5px; font-weight:800; }
   .macro-target{ font-size:10.5px; color:var(--ink-soft); font-weight:600; }
   .macro-avg{ font-size:10px; color:var(--blue); font-weight:700; margin-top:2px; }
+
+  .stat-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .stat-row:last-child{ border-bottom:none; }
+  .stat-row-lbl{ color:var(--ink-soft); font-weight:600; }
+  .stat-row-val{ font-weight:800; text-align:right; white-space:nowrap; }
 
   .profile-bar{
     display:flex; justify-content:space-between; align-items:center;
@@ -258,21 +269,54 @@
         <div class="progress-bg"><div class="progress-bar carb" id="barCarbMes"></div></div>
       </div>
 
-      <div class="macro-grid">
-        <div class="macro-item">
-          <span class="macro-lbl">Grasas / día</span>
-          <span class="macro-val" id="valGrasaMes">0g</span>
-          <span class="macro-target" id="targetGrasaMes">0% de meta</span>
+      <div class="main-stat">
+        <div class="stat-labels">
+          <span class="num" style="font-size:18px;" id="valGrasaMes">0g Grasas/día</span>
+          <span class="target-text" id="targetGrasaMes">0% de tu meta</span>
         </div>
-        <div class="macro-item">
-          <span class="macro-lbl">Fibra / día</span>
-          <span class="macro-val" id="valFibraMes">0g</span>
-          <span class="macro-target" id="targetFibraMes">0% de meta</span>
+        <div class="progress-bg"><div class="progress-bar grasa" id="barGrasaMes"></div></div>
+      </div>
+
+      <div class="main-stat">
+        <div class="stat-labels">
+          <span class="num" style="font-size:18px;" id="valFibraMes">0g Fibra/día</span>
+          <span class="target-text" id="targetFibraMes">0% de tu meta</span>
         </div>
+        <div class="progress-bg"><div class="progress-bar fibra" id="barFibraMes"></div></div>
       </div>
     </div>
 
     <p class="field-hint" style="text-align:center; margin:-6px 0 4px;">Proteína y fibra: pasarte de la meta suma. Calorías, carbos y grasas: pasarte resta más que quedarte corto.</p>
+
+    <div class="summary-card">
+      <div class="summary-header">
+        <span class="summary-title">Constancia y Tendencia</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-lbl">Racha actual de días cerrados</span>
+        <span class="stat-row-val" id="valRacha">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-lbl">Días dentro de tu meta calórica (±10%)</span>
+        <span class="stat-row-val" id="valDiasEnMeta">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-lbl">Mejor día del mes</span>
+        <span class="stat-row-val" id="valMejorDia">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-lbl">Peor día del mes</span>
+        <span class="stat-row-val" id="valPeorDia">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-lbl">Tendencia (1ª vs 2ª mitad del mes)</span>
+        <span class="stat-row-val" id="valTendencia">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-row-lbl">Consistencia en calorías día a día</span>
+        <span class="stat-row-val" id="valConsistencia">--</span>
+      </div>
+    </div>
   </div>
 
   <!-- PANEL DIARIO -->
@@ -661,15 +705,66 @@
     };
   }
 
+  function dayWeightedScore(d){
+    const c = dayScoreComponents(d);
+    return (c.prot * SCORE_WEIGHTS.prot) + (c.cal * SCORE_WEIGHTS.cal) +
+      (c.carb * SCORE_WEIGHTS.carb) + (c.grasa * SCORE_WEIGHTS.grasa) + (c.fibra * SCORE_WEIGHTS.fibra);
+  }
+
+  // Racha, mejor/peor día, tendencia y consistencia: métricas de constancia, distintas al promedio de nutrientes
+  function calculateExtraStats(){
+    const days = state.closedDays;
+    if(days.length === 0) return null;
+
+    // Racha actual: cuenta hacia atrás desde el último día cerrado mientras las fechas sean consecutivas
+    let racha = 1;
+    let rachaConocida = true;
+    for(let i = days.length - 1; i > 0; i--){
+      if(!days[i].date || !days[i-1].date){ rachaConocida = false; break; }
+      const curr = new Date(days[i].date + 'T00:00:00');
+      const prev = new Date(days[i-1].date + 'T00:00:00');
+      const diffDays = Math.round((curr - prev) / 86400000);
+      if(diffDays === 1){ racha++; } else { break; }
+    }
+    if(!rachaConocida) racha = null;
+
+    // Días dentro del rango de meta calórica (90%-110%)
+    const dentroMeta = days.filter(d => {
+      const pct = d.cal / state.goals.dailyCal;
+      return pct >= 0.9 && pct <= 1.1;
+    }).length;
+
+    // Mejor y peor día por score ponderado del día
+    let mejor = null, peor = null;
+    days.forEach(d => {
+      const score = dayWeightedScore(d);
+      if(!mejor || score > mejor.score) mejor = { date: d.date, score };
+      if(!peor || score < peor.score) peor = { date: d.date, score };
+    });
+
+    // Tendencia: promedio de score en la primera mitad del mes vs la segunda mitad
+    const mid = Math.ceil(days.length / 2);
+    const firstHalf = days.slice(0, mid);
+    const secondHalf = days.slice(mid);
+    const avgScoreOf = (arr) => arr.length === 0 ? null : arr.reduce((sum, d) => sum + dayWeightedScore(d), 0) / arr.length;
+    const firstAvg = avgScoreOf(firstHalf);
+    const secondAvg = avgScoreOf(secondHalf);
+
+    // Consistencia: desviación estándar de tus calorías diarias, en % de la meta
+    const pcts = days.map(d => (d.cal / state.goals.dailyCal) * 100);
+    const meanPct = pcts.reduce((a,b) => a+b, 0) / pcts.length;
+    const variance = pcts.reduce((sum,p) => sum + Math.pow(p - meanPct, 2), 0) / pcts.length;
+    const stdevPct = Math.sqrt(variance);
+
+    return { racha, dentroMeta, totalDias: days.length, mejor, peor, firstAvg, secondAvg, stdevPct };
+  }
+
   function calculateMonthlyScore(){
     if (state.closedDays.length === 0) return { score: '--', text: 'Aún no hay días cerrados este mes' };
 
     let totalDayScores = 0;
     state.closedDays.forEach(d => {
-      const c = dayScoreComponents(d);
-      const dayScore = (c.prot * SCORE_WEIGHTS.prot) + (c.cal * SCORE_WEIGHTS.cal) +
-        (c.carb * SCORE_WEIGHTS.carb) + (c.grasa * SCORE_WEIGHTS.grasa) + (c.fibra * SCORE_WEIGHTS.fibra);
-      totalDayScores += dayScore;
+      totalDayScores += dayWeightedScore(d);
     });
 
     const finalScore = ((totalDayScores / state.closedDays.length) * 10).toFixed(1);
@@ -760,15 +855,48 @@
     barCarbMes.style.width = Math.min(100, pctCarb) + '%';
     barCarbMes.classList.toggle('over', pctCarb > 100);
 
-    document.getElementById('valGrasaMes').textContent = Math.round(avgGrasa) + 'g';
-    document.getElementById('targetGrasaMes').textContent = `${pctGrasa}% de meta`;
+    document.getElementById('valGrasaMes').textContent = `${Math.round(avgGrasa)}g Grasas/día`;
+    document.getElementById('targetGrasaMes').textContent = `${pctGrasa}% de tu meta`;
+    const barGrasaMes = document.getElementById('barGrasaMes');
+    barGrasaMes.style.width = Math.min(100, pctGrasa) + '%';
+    barGrasaMes.classList.toggle('over', pctGrasa > 100);
 
-    document.getElementById('valFibraMes').textContent = Math.round(avgFibra) + 'g';
-    document.getElementById('targetFibraMes').textContent = `${pctFibra}% de meta`;
+    document.getElementById('valFibraMes').textContent = `${Math.round(avgFibra)}g Fibra/día`;
+    document.getElementById('targetFibraMes').textContent = `${pctFibra}% de tu meta`;
+    document.getElementById('barFibraMes').style.width = Math.min(100, pctFibra) + '%';
 
     const scoreData = calculateMonthlyScore();
     document.getElementById('monthlyScore').textContent = scoreData.score === '--' ? '-- / 10' : `${scoreData.score} / 10`;
     document.getElementById('monthlyScoreDesc').textContent = scoreData.text;
+
+    const extra = calculateExtraStats();
+    const extraIds = ['valRacha','valDiasEnMeta','valMejorDia','valPeorDia','valTendencia','valConsistencia'];
+    if(extra){
+      document.getElementById('valRacha').textContent = extra.racha === null ? 'N/D (días sin fecha)' : `${extra.racha} día${extra.racha === 1 ? '' : 's'}`;
+      document.getElementById('valDiasEnMeta').textContent = `${extra.dentroMeta} / ${extra.totalDias}`;
+
+      document.getElementById('valMejorDia').textContent = extra.mejor
+        ? `${formatDate(extra.mejor.date) || 'Sin fecha'} · ${(extra.mejor.score * 10).toFixed(1)}/10`
+        : '--';
+      document.getElementById('valPeorDia').textContent = extra.peor
+        ? `${formatDate(extra.peor.date) || 'Sin fecha'} · ${(extra.peor.score * 10).toFixed(1)}/10`
+        : '--';
+
+      if(extra.firstAvg === null || extra.secondAvg === null || extra.totalDias < 2){
+        document.getElementById('valTendencia').textContent = 'Necesitas más días';
+      } else {
+        const diff = (extra.secondAvg - extra.firstAvg) * 10;
+        if(Math.abs(diff) < 0.3) document.getElementById('valTendencia').textContent = 'Estable';
+        else if(diff > 0) document.getElementById('valTendencia').textContent = `Mejorando (+${diff.toFixed(1)})`;
+        else document.getElementById('valTendencia').textContent = `Bajando (${diff.toFixed(1)})`;
+      }
+
+      document.getElementById('valConsistencia').textContent = extra.totalDias < 2
+        ? 'Necesitas más días'
+        : `±${Math.round(extra.stdevPct)}% respecto a tu meta`;
+    } else {
+      extraIds.forEach(id => { document.getElementById(id).textContent = '--'; });
+    }
 
     const consumedList = document.getElementById('consumedList');
     consumedList.innerHTML = '';
