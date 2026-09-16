@@ -518,8 +518,8 @@
       { id: 'chetos', name: 'Chetos', icon: '🧀', unit: 'g', baseQty: 100, cal: 545, prot: 6.0, carb: 55.0, grasa: 33.0, fibra: 2.0, fav: false, quick: [30, 50, 100] },
       { id: 'mermelada', name: 'Mermelada (cucharada)', icon: '🍓', unit: 'scoop', baseQty: 1, cal: 56, prot: 0.1, carb: 14.0, grasa: 0.0, fibra: 0.2, fav: false, quick: [1, 2] },
       { id: 'nutela', name: 'Nutella (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 106, prot: 1.2, carb: 11.5, grasa: 6.1, fibra: 0.6, fav: false, quick: [1, 2] },
-      { id: 'cocacola', name: 'Coca-Cola normal (lata)', icon: '🥤', unit: 'lata', baseQty: 1, cal: 140, prot: 0.0, carb: 39.0, grasa: 0.0, fibra: 0.0, fav: false, quick: [0.5, 1, 2] },
-      { id: 'cocacola_zero', name: 'Coca-Cola Zero (lata)', icon: '🥤', unit: 'lata', baseQty: 1, cal: 1, prot: 0.0, carb: 0.3, grasa: 0.0, fibra: 0.0, fav: false, quick: [0.5, 1, 2] },
+      { id: 'cocacola', name: 'Coca-Cola normal', icon: '🥤', unit: 'ml', baseQty: 100, cal: 39, prot: 0.0, carb: 10.6, grasa: 0.0, fibra: 0.0, fav: false, quick: [100, 250, 355] },
+      { id: 'cocacola_zero', name: 'Coca-Cola Zero', icon: '🥤', unit: 'ml', baseQty: 100, cal: 0, prot: 0.0, carb: 0.1, grasa: 0.0, fibra: 0.0, fav: false, quick: [100, 250, 355] },
       { id: 'chocomilk', name: 'Chocomilk en polvo (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 39, prot: 0.4, carb: 9.3, grasa: 0.3, fibra: 0.5, fav: false, quick: [1, 2] },
       { id: 'leche_polvo', name: 'Leche en polvo (cucharada)', icon: '🥛', unit: 'scoop', baseQty: 1, cal: 40, prot: 2.1, carb: 3.1, grasa: 2.2, fibra: 0.0, fav: false, quick: [1, 2, 3] },
       { id: 'maruchan', name: 'Sopa Maruchan', icon: '🍜', unit: 'pz', baseQty: 1, cal: 380, prot: 7.0, carb: 51.0, grasa: 15.0, fibra: 2.0, fav: false, quick: [1, 2] },
@@ -563,6 +563,23 @@
       if(prot && Array.isArray(prot.quick) && prot.quick.length === 2 && prot.quick[0] === 1 && prot.quick[1] === 2){
         prot.quick = [0.5, 1];
       }
+      // Migra las Coca-Cola de "por lata" a "por 100ml", solo si siguen con los valores originales por lata
+      ['cocacola', 'cocacola_zero'].forEach(id => {
+        const drink = data.foods.find(f => f.id === id);
+        if(drink && drink.unit === 'lata' && drink.baseQty === 1){
+          const fresh = defaultFoods().find(f => f.id === id);
+          if(fresh){
+            drink.unit = fresh.unit;
+            drink.baseQty = fresh.baseQty;
+            drink.cal = fresh.cal;
+            drink.prot = fresh.prot;
+            drink.carb = fresh.carb;
+            drink.grasa = fresh.grasa;
+            drink.fibra = fresh.fibra;
+            drink.quick = fresh.quick;
+          }
+        }
+      });
       return data;
     }catch(e){
       return defaultData();
