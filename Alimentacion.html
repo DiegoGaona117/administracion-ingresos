@@ -19,6 +19,7 @@
     --green:#1FA971;
     --gold:#D79A1F;
     --red:#E5533D;
+    --water:#2AA8E0;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -77,6 +78,8 @@
   .progress-bar.grasa{ background:#8B5CF6; }
   .progress-bar.grasa.over{ background:var(--red); }
   .progress-bar.fibra{ background:#0EA5A0; }
+  .progress-bar.agua{ background:var(--water); }
+  .progress-bar.agua.full{ background:var(--green); }
 
   .macro-grid{
     display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
@@ -257,6 +260,12 @@
       <div class="score-desc" id="monthlyScoreDesc">Calculando en base a días cerrados...</div>
     </div>
 
+    <div class="score-card" style="background:#E7F6FC;">
+      <div class="score-lbl">Hidratación del Mes 💧</div>
+      <div class="score-val" id="monthlyAguaScore" style="color:#1791C8;">-- / 10</div>
+      <div class="score-desc" id="monthlyAguaScoreDesc">Calculando en base a días cerrados...</div>
+    </div>
+
     <div class="summary-card">
       <div class="summary-header">
         <span class="summary-title">Promedio Diario del Mes</span>
@@ -301,6 +310,14 @@
           <span class="target-text" id="targetFibraMes">0% de tu meta</span>
         </div>
         <div class="progress-bg"><div class="progress-bar fibra" id="barFibraMes"></div></div>
+      </div>
+
+      <div class="main-stat">
+        <div class="stat-labels">
+          <span class="num num-mes" id="valAguaMes">0 ml Agua/día</span>
+          <span class="target-text" id="targetAguaMes">0% de tu meta</span>
+        </div>
+        <div class="progress-bg"><div class="progress-bar agua" id="barAguaMes"></div></div>
       </div>
     </div>
 
@@ -382,6 +399,31 @@
     </div>
   </div>
 
+  <!-- PANEL DE AGUA (aparte del panel nutricional) -->
+  <div class="summary-card" id="waterCard">
+    <div class="summary-header">
+      <span class="summary-title">Hidratación del Día 💧</span>
+      <span class="summary-days" id="valAguaScore">-- / 10</span>
+    </div>
+
+    <div class="main-stat">
+      <div class="stat-labels">
+        <span class="num" id="valAgua">0 ml</span>
+        <span class="target-text" id="targetAgua">Meta: 2000 ml</span>
+      </div>
+      <div class="progress-bg"><div class="progress-bar agua" id="barAgua"></div></div>
+    </div>
+
+    <div class="quick-amounts" style="margin-top:2px;">
+      <button class="quick-amt-btn" data-agua="250">+250 ml</button>
+      <button class="quick-amt-btn" data-agua="500">+500 ml</button>
+      <button class="quick-amt-btn" data-agua="1000">+1 L</button>
+      <button class="quick-amt-btn" id="btnAguaCustom">+ Otra cant.</button>
+    </div>
+
+    <div id="aguaTxWrap"></div>
+  </div>
+
   <div class="profile-bar">
     <span>Meta Proteína: <strong id="lblMetaProt">100g/día</strong></span>
     <button class="btn-edit-goals" id="btnEditarMetas">Ajustar Metas</button>
@@ -455,6 +497,11 @@
       <input type="checkbox" id="goalCalAuto" checked style="width:auto;">
       Calcular calorías automáticamente desde los macros
     </label>
+    <div class="field" style="margin-top:14px;">
+      <label for="goalAgua">Agua / día (ml)</label>
+      <input type="number" id="goalAgua" placeholder="2000">
+      <div class="field-hint">Pasarte de la meta no resta puntos, al contrario, está bien.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn ghost" id="metasCancel">Cancelar</button>
       <button class="btn primary" id="metasGuardar">Guardar Metas</button>
@@ -603,8 +650,9 @@
     return {
       currentDay: 1,
       currentDayDate: todayISO(),
-      goals: { dailyCal: 2350, dailyProt: 100, dailyCarb: 310, dailyGrasa: 65, dailyFibra: 30 },
+      goals: { dailyCal: 2350, dailyProt: 100, dailyCarb: 310, dailyGrasa: 65, dailyFibra: 30, dailyAgua: 2000 },
       currentDayEntries: [],
+      currentDayWaterEntries: [],
       closedDays: [],
       monthHistory: [],
       foods: defaultFoods(),
@@ -625,6 +673,8 @@
       if(!data.currentDayDate) data.currentDayDate = todayISO();
       if(!data.foods) data.foods = defaultFoods();
       if(!data.goals) data.goals = defaultData().goals;
+      if(!data.goals.dailyAgua) data.goals.dailyAgua = 2000;
+      if(!data.currentDayWaterEntries) data.currentDayWaterEntries = [];
       if(!data.mealSections || !Array.isArray(data.mealSections) || data.mealSections.length === 0){
         data.mealSections = ['Desayuno', 'Comida', 'Cena', 'Snacks'];
       }
@@ -846,6 +896,31 @@
     return { score: finalScore, text };
   }
 
+  // Score de hidratación: completamente aparte del score nutricional.
+  // Usa la misma lógica "mientras más, mejor" que proteína/fibra: llegar o pasarte de la meta da el máximo puntaje.
+  function calculateHydrationScore(){
+    if (state.closedDays.length === 0) return { score: '--', text: 'Aún no hay días cerrados este mes' };
+
+    let total = 0;
+    state.closedDays.forEach(d => {
+      total += minGoalScore(d.agua || 0, state.goals.dailyAgua);
+    });
+
+    const finalScore = ((total / state.closedDays.length) * 10).toFixed(1);
+    let text = 'Necesitas tomar más agua';
+    if (finalScore >= 9) text = 'Excelente hidratación';
+    else if (finalScore >= 7) text = 'Bien hidratado';
+    else if (finalScore >= 5) text = 'Vas bien, sigue subiendo';
+
+    return { score: finalScore, text };
+  }
+
+  function registerAgua(qty){
+    if(!qty || qty <= 0) return;
+    state.currentDayWaterEntries.push({ id: uid(), qty: Number(qty) });
+    save(); render();
+  }
+
   function renderMealTabs(){
     const wrap = document.getElementById('mealTabs');
     wrap.innerHTML = '';
@@ -970,7 +1045,35 @@
     document.getElementById('valFibra').textContent = Math.round(todayFibra) + 'g';
     document.getElementById('targetFibra').textContent = `/${state.goals.dailyFibra}g`;
 
-    let monthCal = 0, monthProt = 0, monthCarb = 0, monthGrasa = 0, monthFibra = 0;
+    // Hidratación del día (aparte del resto de nutrientes)
+    const todayAgua = state.currentDayWaterEntries.reduce((sum, e) => sum + e.qty, 0);
+    document.getElementById('valAgua').textContent = `${Math.round(todayAgua).toLocaleString('es-MX')} ml`;
+    document.getElementById('targetAgua').textContent = `Meta: ${state.goals.dailyAgua} ml`;
+    const barAgua = document.getElementById('barAgua');
+    barAgua.style.width = (Math.min(100, Math.round((todayAgua / state.goals.dailyAgua) * 100)) || 0) + '%';
+    barAgua.classList.toggle('full', todayAgua >= state.goals.dailyAgua);
+    document.getElementById('valAguaScore').textContent = `${(minGoalScore(todayAgua, state.goals.dailyAgua) * 10).toFixed(1)} / 10`;
+
+    const aguaTxWrap = document.getElementById('aguaTxWrap');
+    if(state.currentDayWaterEntries.length === 0){
+      aguaTxWrap.innerHTML = '<div style="font-size:12px; color:var(--ink-soft); margin-top:10px;">Sin registros de agua hoy</div>';
+    } else {
+      aguaTxWrap.innerHTML = state.currentDayWaterEntries.map(e => `
+        <div class="tx-row">
+          <span class="tx-desc">+${Math.round(e.qty)} ml</span>
+          <button class="tx-del" data-tx-agua="${e.id}">✕</button>
+        </div>
+      `).join('');
+      aguaTxWrap.querySelectorAll('[data-tx-agua]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-tx-agua');
+          state.currentDayWaterEntries = state.currentDayWaterEntries.filter(e => e.id !== id);
+          save(); render();
+        });
+      });
+    }
+
+    let monthCal = 0, monthProt = 0, monthCarb = 0, monthGrasa = 0, monthFibra = 0, monthAgua = 0;
 
     state.closedDays.forEach(d => {
       monthCal += d.cal;
@@ -978,6 +1081,7 @@
       monthCarb += d.carb;
       monthGrasa += d.grasa;
       monthFibra += d.fibra;
+      monthAgua += (d.agua || 0);
     });
 
     const totalClosed = state.closedDays.length || 1;
@@ -986,6 +1090,7 @@
     const avgCarb = monthCarb / totalClosed;
     const avgGrasa = monthGrasa / totalClosed;
     const avgFibra = monthFibra / totalClosed;
+    const avgAgua = monthAgua / totalClosed;
 
     const pctCal = Math.round((avgCal / state.goals.dailyCal) * 100) || 0;
     const pctProt = Math.round((avgProt / state.goals.dailyProt) * 100) || 0;
@@ -1025,9 +1130,20 @@
     document.getElementById('targetFibraMes').textContent = `${pctFibra}% de tu meta`;
     document.getElementById('barFibraMes').style.width = Math.min(100, pctFibra) + '%';
 
+    const pctAgua = Math.round((avgAgua / state.goals.dailyAgua) * 100) || 0;
+    document.getElementById('valAguaMes').textContent = `${Math.round(avgAgua).toLocaleString('es-MX')} ml Agua/día`;
+    document.getElementById('targetAguaMes').textContent = `${pctAgua}% de tu meta`;
+    const barAguaMes = document.getElementById('barAguaMes');
+    barAguaMes.style.width = Math.min(100, pctAgua) + '%';
+    barAguaMes.classList.toggle('full', pctAgua >= 100);
+
     const scoreData = calculateMonthlyScore();
     document.getElementById('monthlyScore').textContent = scoreData.score === '--' ? '-- / 10' : `${scoreData.score} / 10`;
     document.getElementById('monthlyScoreDesc').textContent = scoreData.text;
+
+    const hydrationData = calculateHydrationScore();
+    document.getElementById('monthlyAguaScore').textContent = hydrationData.score === '--' ? '-- / 10' : `${hydrationData.score} / 10`;
+    document.getElementById('monthlyAguaScoreDesc').textContent = hydrationData.text;
 
     const extra = calculateExtraStats();
     const extraIds = ['valRacha','valDiasEnMeta','valMejorDia','valPeorDia','valTendencia','valConsistencia'];
@@ -1203,6 +1319,18 @@
     save(); render();
   }
 
+  document.querySelectorAll('#waterCard [data-agua]').forEach(btn => {
+    btn.addEventListener('click', () => registerAgua(Number(btn.getAttribute('data-agua'))));
+  });
+
+  document.getElementById('btnAguaCustom').addEventListener('click', () => {
+    const val = prompt('¿Cuántos ml quieres registrar?');
+    if(val === null) return;
+    const qty = Number(val);
+    if(!qty || qty <= 0){ alert('Escribe una cantidad válida'); return; }
+    registerAgua(qty);
+  });
+
   document.getElementById('btnAddMeal').addEventListener('click', () => {
     const name = prompt('Nombre de la nueva sección (ej. Colación, Post-entreno):');
     if(name === null) return;
@@ -1236,6 +1364,8 @@
       }
     });
 
+    const dayAgua = state.currentDayWaterEntries.reduce((sum, e) => sum + e.qty, 0);
+
     state.closedDays.push({
       dayNum: state.currentDay,
       date: state.currentDayDate,
@@ -1243,13 +1373,15 @@
       prot: dayProt,
       carb: dayCarb,
       grasa: dayGrasa,
-      fibra: dayFibra
+      fibra: dayFibra,
+      agua: dayAgua
     });
 
     const closedDateLabel = formatDate(state.currentDayDate);
     state.currentDay += 1;
     state.currentDayDate = todayISO();
     state.currentDayEntries = [];
+    state.currentDayWaterEntries = [];
     state.activeSection = state.mealSections[0] || 'todos';
     openFoodId = null;
 
@@ -1306,6 +1438,7 @@
     goalCarbInput.value = state.goals.dailyCarb;
     goalGrasaInput.value = state.goals.dailyGrasa;
     document.getElementById('goalFibra').value = state.goals.dailyFibra;
+    document.getElementById('goalAgua').value = state.goals.dailyAgua;
     goalCalAuto.checked = true;
     applyCalAutoState();
     recalcGoalCalories();
@@ -1319,6 +1452,7 @@
     state.goals.dailyGrasa = Number(goalGrasaInput.value) || 65;
     state.goals.dailyCal = Number(goalCalInput.value) || 2350;
     state.goals.dailyFibra = Number(document.getElementById('goalFibra').value) || 30;
+    state.goals.dailyAgua = Number(document.getElementById('goalAgua').value) || 2000;
     save(); render();
     modalMetas.classList.remove('open');
   });
