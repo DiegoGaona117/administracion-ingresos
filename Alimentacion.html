@@ -116,7 +116,7 @@
     padding:7px 13px; border-radius:20px; cursor:pointer;
   }
 
-  .meal-tabs{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px; }
+  .meal-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
   .meal-tab{
     display:flex; align-items:center; gap:5px; flex:0 0 auto;
     border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft);
@@ -124,6 +124,8 @@
     cursor:pointer; white-space:nowrap; font-family:'Inter',sans-serif;
   }
   .meal-tab.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .meal-tab-check{ width:14px; height:14px; accent-color:var(--blue); cursor:pointer; margin:0; }
+  .meal-tab.active .meal-tab-check{ accent-color:#fff; }
   .meal-tab-del{ font-size:11px; opacity:0.65; }
   .meal-tab-del:hover{ opacity:1; }
   .section-header{
@@ -147,6 +149,8 @@
   }
 
   .list{ display:flex; flex-direction:column; }
+  .row.row-flagged{ background:#FFF6F1; border-radius:10px; }
+  .quality-flag{ font-size:12px; color:var(--red); font-weight:700; }
   .row{
     display:flex; align-items:center; gap:12px;
     padding:13px 4px; border-bottom:1px solid var(--line);
@@ -435,6 +439,7 @@
     <button id="btnAddMeal">+ Agregar sección</button>
   </div>
   <div class="meal-tabs" id="mealTabs"></div>
+  <p class="field-hint" id="mealSectionHint" style="margin:-8px 0 14px;">Desmarca una sección para planear tu día completo sin que cuente todavía en tus totales de arriba.</p>
 
   <!-- SECCIÓN 1: Consumidos HOY -->
   <div class="section-title">
@@ -551,6 +556,10 @@
       <input type="text" id="foodQuick" placeholder="Ej. 100, 150, 200">
       <div class="field-hint">Separadas por coma. Si lo dejas vacío, se usan valores por defecto según la unidad.</div>
     </div>
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; cursor:pointer;">
+      <input type="checkbox" id="foodQualityExempt" style="width:auto;">
+      Excluir de la alerta de calidad (ej. grasas saludables: aguacate, cacahuates)
+    </label>
     <div class="modal-actions">
       <button class="btn ghost" id="foodCancel">Cancelar</button>
       <button class="btn primary" id="foodGuardar">Guardar</button>
@@ -614,9 +623,9 @@
       { id: 'camote', name: 'Camote cocido', icon: '🍠', unit: 'g', baseQty: 100, cal: 86, prot: 1.6, carb: 20.0, grasa: 0.1, fibra: 3.0, fav: false, quick: [100, 150, 200] },
       { id: 'pasta', name: 'Pasta cocida', icon: '🍝', unit: 'g', baseQty: 100, cal: 131, prot: 5.0, carb: 25.0, grasa: 1.1, fibra: 1.8, fav: false, quick: [100, 150, 200] },
       { id: 'bolillo', name: 'Bolillo', icon: '🥖', unit: 'pz', baseQty: 1, cal: 183, prot: 5.7, carb: 37.0, grasa: 1.4, fibra: 1.6, fav: false, quick: [0.5, 1] },
-      { id: 'cacahuates', name: 'Cacahuates', icon: '🥜', unit: 'g', baseQty: 100, cal: 567, prot: 25.8, carb: 16.1, grasa: 49.2, fibra: 8.5, fav: false, quick: [30, 50] },
-      { id: 'crema_cacahuate', name: 'Crema de cacahuate', icon: '🍯', unit: 'g', baseQty: 30, cal: 188, prot: 8.0, carb: 6.0, grasa: 16.0, fibra: 2.0, fav: false, quick: [15, 30] },
-      { id: 'aguacate', name: 'Aguacate', icon: '🥑', unit: 'g', baseQty: 100, cal: 160, prot: 2.0, carb: 8.5, grasa: 14.7, fibra: 6.7, fav: false, quick: [50, 100] },
+      { id: 'cacahuates', name: 'Cacahuates', icon: '🥜', unit: 'g', baseQty: 100, cal: 567, prot: 25.8, carb: 16.1, grasa: 49.2, fibra: 8.5, fav: false, quick: [30, 50], qualityExempt: true },
+      { id: 'crema_cacahuate', name: 'Crema de cacahuate', icon: '🍯', unit: 'g', baseQty: 30, cal: 188, prot: 8.0, carb: 6.0, grasa: 16.0, fibra: 2.0, fav: false, quick: [15, 30], qualityExempt: true },
+      { id: 'aguacate', name: 'Aguacate', icon: '🥑', unit: 'g', baseQty: 100, cal: 160, prot: 2.0, carb: 8.5, grasa: 14.7, fibra: 6.7, fav: false, quick: [50, 100], qualityExempt: true },
       { id: 'platano', name: 'Plátano', icon: '🍌', unit: 'pz', baseQty: 1, cal: 105, prot: 1.3, carb: 27.0, grasa: 0.3, fibra: 3.1, fav: false, quick: [1, 2] },
       { id: 'manzana', name: 'Manzana', icon: '🍎', unit: 'pz', baseQty: 1, cal: 95, prot: 0.5, carb: 25.0, grasa: 0.3, fibra: 4.4, fav: false, quick: [1] },
       { id: 'calabacitas', name: 'Calabacitas cocidas', icon: '🥒', unit: 'g', baseQty: 100, cal: 15, prot: 1.1, carb: 3.1, grasa: 0.2, fibra: 1.0, fav: false, quick: [100, 150, 200] },
@@ -656,7 +665,12 @@
       closedDays: [],
       monthHistory: [],
       foods: defaultFoods(),
-      mealSections: ['Desayuno', 'Comida', 'Cena', 'Snacks'],
+      mealSections: [
+        { name: 'Desayuno', active: true },
+        { name: 'Comida', active: true },
+        { name: 'Cena', active: true },
+        { name: 'Snacks', active: true }
+      ],
       activeSection: 'Desayuno'
     };
   }
@@ -676,9 +690,17 @@
       if(!data.goals.dailyAgua) data.goals.dailyAgua = 2000;
       if(!data.currentDayWaterEntries) data.currentDayWaterEntries = [];
       if(!data.mealSections || !Array.isArray(data.mealSections) || data.mealSections.length === 0){
-        data.mealSections = ['Desayuno', 'Comida', 'Cena', 'Snacks'];
+        data.mealSections = [
+          { name: 'Desayuno', active: true },
+          { name: 'Comida', active: true },
+          { name: 'Cena', active: true },
+          { name: 'Snacks', active: true }
+        ];
+      } else if(typeof data.mealSections[0] === 'string'){
+        // Migración: versiones anteriores guardaban las secciones como texto simple
+        data.mealSections = data.mealSections.map(name => ({ name, active: true }));
       }
-      if(!data.activeSection) data.activeSection = data.mealSections[0] || 'todos';
+      if(!data.activeSection) data.activeSection = data.mealSections[0].name || 'todos';
       // Agrega alimentos nuevos del catálogo (ej. frutas) sin tocar los que el usuario ya tiene/editó
       const existingIds = new Set(data.foods.map(f => f.id));
       defaultFoods().forEach(df => {
@@ -705,6 +727,12 @@
             drink.quick = fresh.quick;
           }
         }
+      });
+      // Marca como "grasa saludable" (exenta de la alerta de calidad) alimentos que ya existían
+      // antes de que se agregara esta función, solo si el usuario no lo había definido ya.
+      ['aguacate', 'cacahuates', 'crema_cacahuate'].forEach(id => {
+        const f = data.foods.find(item => item.id === id);
+        if(f && f.qualityExempt === undefined) f.qualityExempt = true;
       });
       return data;
     }catch(e){
@@ -915,6 +943,28 @@
     return { score: finalScore, text };
   }
 
+  // Alerta de calidad: marca porciones con muchas calorías pero muy poca proteína
+  // (ej. Chetos, pan dulce, refresco). Alimentos marcados como "qualityExempt" nunca
+  // se marcan (grasas saludables como aguacate o cacahuates, que naturalmente traen
+  // poca proteína pero no son "comida chatarra").
+  const QUALITY_ALERT_MIN_CAL = 150;      // por debajo de esto, no vale la pena alertar
+  const QUALITY_ALERT_MAX_DENSITY = 4;    // g de proteína por cada 100 kcal
+
+  function isLowQualityPortion(food, qty){
+    if(food.qualityExempt) return false;
+    const n = foodNutrientsByQty(food, qty);
+    if(n.cal < QUALITY_ALERT_MIN_CAL) return false;
+    const density = n.cal > 0 ? (n.prot / n.cal) * 100 : 0;
+    return density < QUALITY_ALERT_MAX_DENSITY;
+  }
+
+  // Determina si una entrada cuenta hacia el total del día: cuenta si su sección
+  // está activa (check marcado), o si la sección ya no existe (huérfana, cuenta siempre).
+  function isEntrySectionActive(entry){
+    const sec = state.mealSections.find(s => s.name === entry.section);
+    return !sec || sec.active !== false;
+  }
+
   function registerAgua(qty){
     if(!qty || qty <= 0) return;
     state.currentDayWaterEntries.push({ id: uid(), qty: Number(qty) });
@@ -925,42 +975,60 @@
     const wrap = document.getElementById('mealTabs');
     wrap.innerHTML = '';
 
-    function makeTab(label, value, deletable){
+    // Tab "Todos": solo vista, no tiene check ni se puede borrar
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button';
+    allBtn.className = 'meal-tab' + (state.activeSection === 'todos' ? ' active' : '');
+    allBtn.textContent = 'Todos';
+    allBtn.addEventListener('click', () => {
+      state.activeSection = 'todos';
+      save(); render();
+    });
+    wrap.appendChild(allBtn);
+
+    state.mealSections.forEach(sec => {
       const btn = document.createElement('button');
-      btn.className = 'meal-tab' + (state.activeSection === value ? ' active' : '');
       btn.type = 'button';
+      btn.className = 'meal-tab' + (state.activeSection === sec.name ? ' active' : '');
+
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.className = 'meal-tab-check';
+      check.checked = sec.active !== false;
+      check.title = 'Cuenta en el total del día';
+      check.addEventListener('click', (e) => e.stopPropagation());
+      check.addEventListener('change', () => {
+        sec.active = check.checked;
+        save(); render();
+      });
+      btn.appendChild(check);
 
       const labelSpan = document.createElement('span');
-      labelSpan.textContent = label;
+      labelSpan.textContent = sec.name;
       btn.appendChild(labelSpan);
 
-      if(deletable){
-        const del = document.createElement('span');
-        del.className = 'meal-tab-del';
-        del.textContent = '✕';
-        del.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if(confirm(`¿Eliminar la sección "${label}"? Los alimentos ya registrados en ella se conservan.`)){
-            state.mealSections = state.mealSections.filter(s => s !== value);
-            if(state.activeSection === value){
-              state.activeSection = state.mealSections[0] || 'todos';
-            }
-            save(); render();
+      const del = document.createElement('span');
+      del.className = 'meal-tab-del';
+      del.textContent = '✕';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(confirm(`¿Eliminar la sección "${sec.name}"? Los alimentos ya registrados en ella se conservan.`)){
+          state.mealSections = state.mealSections.filter(s => s.name !== sec.name);
+          if(state.activeSection === sec.name){
+            state.activeSection = (state.mealSections[0] && state.mealSections[0].name) || 'todos';
           }
-        });
-        btn.appendChild(del);
-      }
+          save(); render();
+        }
+      });
+      btn.appendChild(del);
 
       btn.addEventListener('click', () => {
-        state.activeSection = value;
+        state.activeSection = sec.name;
         save(); render();
       });
 
       wrap.appendChild(btn);
-    }
-
-    makeTab('Todos', 'todos', false);
-    state.mealSections.forEach(sec => makeTab(sec, sec, true));
+    });
   }
 
   function renderConsumedList(){
@@ -982,15 +1050,17 @@
     }
 
     if(state.activeSection === 'todos'){
-      const order = [...state.mealSections, 'Sin sección'];
+      const order = [...state.mealSections.map(s => s.name), 'Sin sección'];
       let anyShown = false;
-      order.forEach(sec => {
-        const entries = state.currentDayEntries.filter(e => (e.section || 'Sin sección') === sec);
+      order.forEach(secName => {
+        const entries = state.currentDayEntries.filter(e => (e.section || 'Sin sección') === secName);
         if(entries.length === 0) return;
         anyShown = true;
+        const secObj = state.mealSections.find(s => s.name === secName);
         const header = document.createElement('div');
         header.className = 'section-header';
-        header.textContent = sec;
+        header.textContent = (secObj && secObj.active === false) ? `${secName} (no cuenta en el total)` : secName;
+        if(secObj && secObj.active === false) header.style.opacity = '0.6';
         consumedList.appendChild(header);
         appendAggregatedRows(entries);
       });
@@ -1003,6 +1073,14 @@
         consumedList.innerHTML = `<div class="empty-consumed">Nada registrado en "${escapeHtml(state.activeSection)}" todavía.</div>`;
         return;
       }
+      const secObj = state.mealSections.find(s => s.name === state.activeSection);
+      if(secObj && secObj.active === false){
+        const note = document.createElement('div');
+        note.className = 'field-hint';
+        note.style.marginBottom = '8px';
+        note.textContent = 'Esta sección está desmarcada: no suma a tu total de hoy todavía.';
+        consumedList.appendChild(note);
+      }
       appendAggregatedRows(entries);
     }
   }
@@ -1014,6 +1092,7 @@
     let todayCal = 0, todayProt = 0, todayCarb = 0, todayGrasa = 0, todayFibra = 0;
 
     state.currentDayEntries.forEach(entry => {
+      if(!isEntrySectionActive(entry)) return;
       const food = state.foods.find(f => f.id === entry.foodId);
       if(food){
         const n = foodNutrientsByQty(food, entry.qty);
@@ -1200,17 +1279,28 @@
   function renderFoodRow(food, consumedQty, isConsumedSection){
     const wrapper = document.createElement('div');
     const row = document.createElement('div');
-    row.className = 'row';
 
     const favIcon = food.fav ? '★' : '☆';
     const favClass = food.fav ? 'btn-fav active' : 'btn-fav';
+
+    const qtyForCheck = isConsumedSection ? consumedQty : food.baseQty;
+    const flagged = isLowQualityPortion(food, qtyForCheck);
+    row.className = 'row' + (flagged ? ' row-flagged' : '');
+
+    const subText = isConsumedSection
+      ? (() => {
+          const n = foodNutrientsByQty(food, consumedQty);
+          const round1 = (v) => Math.round(v * 10) / 10;
+          return `${Math.round(n.cal)} kcal · ${round1(n.prot)}g prot · ${round1(n.carb)}g carb · ${round1(n.grasa)}g grasa · ${round1(n.fibra)}g fibra`;
+        })()
+      : `${food.cal} kcal / ${food.baseQty}${food.unit}`;
 
     row.innerHTML = `
       ${!isConsumedSection ? `<button class="${favClass}" data-fav="${food.id}" title="Marcar Favorito">${favIcon}</button>` : ''}
       <div class="food-icon">${food.icon || '🍽️'}</div>
       <div class="row-mid">
-        <div class="row-name">${escapeHtml(food.name)}</div>
-        <div class="row-sub">${food.cal} kcal / ${food.baseQty}${food.unit}</div>
+        <div class="row-name">${escapeHtml(food.name)} ${flagged ? '<span class="quality-flag" title="Muchas calorías, muy poca proteína">⚠️</span>' : ''}</div>
+        <div class="row-sub">${subText}</div>
       </div>
       <div class="row-right">
         ${isConsumedSection ? `<div class="row-amt">${formatQty(consumedQty)}</div><div class="row-unit">${food.unit} hoy</div>` : `<div class="row-unit" style="font-size:13px; font-weight:700;">+ Registrar</div>`}
@@ -1313,7 +1403,7 @@
   function registerConsumo(foodId, qty){
     const f = state.foods.find(item => item.id === foodId);
     if(!f || !qty || qty <= 0) return;
-    const section = state.activeSection === 'todos' ? (state.mealSections[0] || 'Sin sección') : state.activeSection;
+    const section = state.activeSection === 'todos' ? ((state.mealSections[0] && state.mealSections[0].name) || 'Sin sección') : state.activeSection;
     state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty), section });
     openFoodId = f.id;
     save(); render();
@@ -1336,11 +1426,11 @@
     if(name === null) return;
     const trimmed = name.trim().slice(0, 20);
     if(!trimmed) return;
-    if(state.mealSections.some(s => s.toLowerCase() === trimmed.toLowerCase())){
+    if(state.mealSections.some(s => s.name.toLowerCase() === trimmed.toLowerCase())){
       alert('Ya existe una sección con ese nombre.');
       return;
     }
-    state.mealSections.push(trimmed);
+    state.mealSections.push({ name: trimmed, active: true });
     state.activeSection = trimmed;
     save(); render();
   });
@@ -1350,9 +1440,15 @@
       if (!confirm('No has registrado ningún alimento el día de hoy. ¿Deseas cerrar el día con 0 calorías?')) return;
     }
 
+    const inactiveWithEntries = state.currentDayEntries.some(e => !isEntrySectionActive(e));
+    if(inactiveWithEntries){
+      if(!confirm('Tienes alimentos en secciones desmarcadas (planeados pero no marcados como consumidos). No se incluirán en el total de este día. ¿Quieres cerrar el día de todas formas?')) return;
+    }
+
     let dayCal = 0, dayProt = 0, dayCarb = 0, dayGrasa = 0, dayFibra = 0;
 
     state.currentDayEntries.forEach(entry => {
+      if(!isEntrySectionActive(entry)) return;
       const food = state.foods.find(f => f.id === entry.foodId);
       if(food){
         const n = foodNutrientsByQty(food, entry.qty);
@@ -1382,7 +1478,7 @@
     state.currentDayDate = todayISO();
     state.currentDayEntries = [];
     state.currentDayWaterEntries = [];
-    state.activeSection = state.mealSections[0] || 'todos';
+    state.activeSection = (state.mealSections[0] && state.mealSections[0].name) || 'todos';
     openFoodId = null;
 
     save(); render();
@@ -1475,6 +1571,7 @@
     document.getElementById('foodGrasa').value = f ? f.grasa : '';
     document.getElementById('foodFibra').value = f ? f.fibra : '';
     document.getElementById('foodQuick').value = f && f.quick ? f.quick.join(', ') : '';
+    document.getElementById('foodQualityExempt').checked = f ? !!f.qualityExempt : false;
 
     modalAlimento.classList.add('open');
   }
@@ -1505,7 +1602,8 @@
       carb: Number(document.getElementById('foodCarb').value) || 0,
       grasa: Number(document.getElementById('foodGrasa').value) || 0,
       fibra: Number(document.getElementById('foodFibra').value) || 0,
-      quick: quick
+      quick: quick,
+      qualityExempt: document.getElementById('foodQualityExempt').checked
     };
 
     if(editingFoodId){
