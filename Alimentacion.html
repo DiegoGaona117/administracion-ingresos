@@ -40,6 +40,14 @@
   }
   .btn-toggle-monthly:hover{ border-color:var(--blue); color:var(--blue); }
 
+  .range-tabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .range-tab{
+    flex:1; border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft);
+    font-size:12.5px; font-weight:700; padding:8px 12px; border-radius:20px;
+    cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s ease;
+  }
+  .range-tab.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
+
   .monthly-panel{
     display:none; background:#FAFBFD; border:2px dashed var(--blue-soft);
     border-radius:20px; padding:18px; margin-bottom:20px; animation:fadeIn .2s ease;
@@ -258,21 +266,27 @@
 
   <!-- PANEL MENSUAL -->
   <div class="monthly-panel" id="monthlyPanel">
+    <div class="range-tabs" id="rangeTabs">
+      <button type="button" class="range-tab" data-range="7">7 días</button>
+      <button type="button" class="range-tab" data-range="14">14 días</button>
+      <button type="button" class="range-tab" data-range="30">30 días</button>
+    </div>
+
     <div class="score-card">
-      <div class="score-lbl">Calidad Nutricional del Mes</div>
+      <div class="score-lbl" id="lblScoreTitle">Calidad Nutricional</div>
       <div class="score-val" id="monthlyScore">-- / 10</div>
       <div class="score-desc" id="monthlyScoreDesc">Calculando en base a días cerrados...</div>
     </div>
 
     <div class="score-card" style="background:#E7F6FC;">
-      <div class="score-lbl">Hidratación del Mes 💧</div>
+      <div class="score-lbl" id="lblAguaTitle">Hidratación 💧</div>
       <div class="score-val" id="monthlyAguaScore" style="color:#1791C8;">-- / 10</div>
       <div class="score-desc" id="monthlyAguaScoreDesc">Calculando en base a días cerrados...</div>
     </div>
 
     <div class="summary-card">
       <div class="summary-header">
-        <span class="summary-title">Promedio Diario del Mes</span>
+        <span class="summary-title" id="lblPromedioTitle">Promedio Diario</span>
         <span class="summary-days" id="valDiasMes">Días cerrados: 0</span>
       </div>
       
@@ -340,15 +354,15 @@
         <span class="stat-row-val" id="valDiasEnMeta">--</span>
       </div>
       <div class="stat-row">
-        <span class="stat-row-lbl">Mejor día del mes</span>
+        <span class="stat-row-lbl">Mejor día del período</span>
         <span class="stat-row-val" id="valMejorDia">--</span>
       </div>
       <div class="stat-row">
-        <span class="stat-row-lbl">Peor día del mes</span>
+        <span class="stat-row-lbl">Peor día del período</span>
         <span class="stat-row-val" id="valPeorDia">--</span>
       </div>
       <div class="stat-row">
-        <span class="stat-row-lbl">Tendencia (1ª vs 2ª mitad del mes)</span>
+        <span class="stat-row-lbl">Tendencia (1ª vs 2ª mitad del período)</span>
         <span class="stat-row-val" id="valTendencia">--</span>
       </div>
       <div class="stat-row">
@@ -465,7 +479,7 @@
 
   <div class="list" id="foodList"></div>
 
-  <footer>Guardado localmente · <span id="btnResetMes" style="text-decoration:underline; cursor:pointer;">cerrar mes entero</span></footer>
+  <footer>Guardado localmente</footer>
 </div>
 
 <!-- Modal: Editar Metas -->
@@ -671,7 +685,8 @@
         { name: 'Cena', active: true },
         { name: 'Snacks', active: true }
       ],
-      activeSection: 'Desayuno'
+      activeSection: 'Desayuno',
+      monthlyRange: 30
     };
   }
 
@@ -701,6 +716,7 @@
         data.mealSections = data.mealSections.map(name => ({ name, active: true }));
       }
       if(!data.activeSection) data.activeSection = data.mealSections[0].name || 'todos';
+      if(![7, 14, 30].includes(data.monthlyRange)) data.monthlyRange = 30;
       // Agrega alimentos nuevos del catálogo (ej. frutas) sin tocar los que el usuario ya tiene/editó
       const existingIds = new Set(data.foods.map(f => f.id));
       defaultFoods().forEach(df => {
@@ -820,18 +836,29 @@
       (c.carb * SCORE_WEIGHTS.carb) + (c.grasa * SCORE_WEIGHTS.grasa) + (c.fibra * SCORE_WEIGHTS.fibra);
   }
 
+  // Días cerrados dentro de los últimos n días calendario (contando hoy).
+  // Los días cerrados sin fecha (versiones muy viejas) no se pueden ubicar en el tiempo, así que se omiten.
+  function getRangeDays(n){
+    const today = new Date(todayISO() + 'T00:00:00');
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - (n - 1));
+    return state.closedDays.filter(d => {
+      if(!d.date) return false;
+      return new Date(d.date + 'T00:00:00') >= cutoff;
+    });
+  }
+
   // Racha, mejor/peor día, tendencia y consistencia: métricas de constancia, distintas al promedio de nutrientes
-  function calculateExtraStats(){
-    const days = state.closedDays;
+  function calculateExtraStats(days, allDays){
     if(days.length === 0) return null;
 
     // Racha actual: cuenta hacia atrás desde el último día cerrado mientras las fechas sean consecutivas
     let racha = 1;
     let rachaConocida = true;
-    for(let i = days.length - 1; i > 0; i--){
-      if(!days[i].date || !days[i-1].date){ rachaConocida = false; break; }
-      const curr = new Date(days[i].date + 'T00:00:00');
-      const prev = new Date(days[i-1].date + 'T00:00:00');
+    for(let i = allDays.length - 1; i > 0; i--){
+      if(!allDays[i].date || !allDays[i-1].date){ rachaConocida = false; break; }
+      const curr = new Date(allDays[i].date + 'T00:00:00');
+      const prev = new Date(allDays[i-1].date + 'T00:00:00');
       const diffDays = Math.round((curr - prev) / 86400000);
       if(diffDays === 1){ racha++; } else { break; }
     }
@@ -907,15 +934,15 @@
     }
   }
 
-  function calculateMonthlyScore(){
-    if (state.closedDays.length === 0) return { score: '--', text: 'Aún no hay días cerrados este mes' };
+  function calculateMonthlyScore(days){
+    if (days.length === 0) return { score: '--', text: 'Aún no hay días cerrados en este período' };
 
     let totalDayScores = 0;
-    state.closedDays.forEach(d => {
+    days.forEach(d => {
       totalDayScores += dayWeightedScore(d);
     });
 
-    const finalScore = ((totalDayScores / state.closedDays.length) * 10).toFixed(1);
+    const finalScore = ((totalDayScores / days.length) * 10).toFixed(1);
     let text = 'Excelente disciplina';
     if (finalScore < 5) text = 'Necesita mayor constancia';
     else if (finalScore < 7.5) text = 'Buen progreso, ajusta proteínas';
@@ -926,15 +953,15 @@
 
   // Score de hidratación: completamente aparte del score nutricional.
   // Usa la misma lógica "mientras más, mejor" que proteína/fibra: llegar o pasarte de la meta da el máximo puntaje.
-  function calculateHydrationScore(){
-    if (state.closedDays.length === 0) return { score: '--', text: 'Aún no hay días cerrados este mes' };
+  function calculateHydrationScore(days){
+    if (days.length === 0) return { score: '--', text: 'Aún no hay días cerrados en este período' };
 
     let total = 0;
-    state.closedDays.forEach(d => {
+    days.forEach(d => {
       total += minGoalScore(d.agua || 0, state.goals.dailyAgua);
     });
 
-    const finalScore = ((total / state.closedDays.length) * 10).toFixed(1);
+    const finalScore = ((total / days.length) * 10).toFixed(1);
     let text = 'Necesitas tomar más agua';
     if (finalScore >= 9) text = 'Excelente hidratación';
     else if (finalScore >= 7) text = 'Bien hidratado';
@@ -1040,12 +1067,14 @@
       return;
     }
 
-    function appendAggregatedRows(entries){
+    // secName = sección a la que pertenecen estas entradas; se pasa a cada fila
+    // para que su detalle solo muestre los registros de esa sección.
+    function appendAggregatedRows(entries, secName){
       const aggregated = {};
       entries.forEach(e => { aggregated[e.foodId] = (aggregated[e.foodId] || 0) + e.qty; });
       Object.keys(aggregated).forEach(foodId => {
         const food = state.foods.find(f => f.id === foodId);
-        if(food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId], true));
+        if(food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId], true, secName));
       });
     }
 
@@ -1062,7 +1091,7 @@
         header.textContent = (secObj && secObj.active === false) ? `${secName} (no cuenta en el total)` : secName;
         if(secObj && secObj.active === false) header.style.opacity = '0.6';
         consumedList.appendChild(header);
-        appendAggregatedRows(entries);
+        appendAggregatedRows(entries, secName);
       });
       if(!anyShown){
         consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento hoy.</div>`;
@@ -1081,7 +1110,7 @@
         note.textContent = 'Esta sección está desmarcada: no suma a tu total de hoy todavía.';
         consumedList.appendChild(note);
       }
-      appendAggregatedRows(entries);
+      appendAggregatedRows(entries, state.activeSection);
     }
   }
 
@@ -1152,9 +1181,19 @@
       });
     }
 
+    // Ventana de días seleccionada (7, 14 o 30) para el rendimiento
+    const range = state.monthlyRange;
+    const rangeDays = getRangeDays(range);
+    document.querySelectorAll('#rangeTabs .range-tab').forEach(b => {
+      b.classList.toggle('active', Number(b.dataset.range) === range);
+    });
+    document.getElementById('lblScoreTitle').textContent = `Calidad Nutricional · ${range} días`;
+    document.getElementById('lblAguaTitle').textContent = `Hidratación 💧 · ${range} días`;
+    document.getElementById('lblPromedioTitle').textContent = `Promedio Diario · ${range} días`;
+
     let monthCal = 0, monthProt = 0, monthCarb = 0, monthGrasa = 0, monthFibra = 0, monthAgua = 0;
 
-    state.closedDays.forEach(d => {
+    rangeDays.forEach(d => {
       monthCal += d.cal;
       monthProt += d.prot;
       monthCarb += d.carb;
@@ -1163,7 +1202,7 @@
       monthAgua += (d.agua || 0);
     });
 
-    const totalClosed = state.closedDays.length || 1;
+    const totalClosed = rangeDays.length || 1;
     const avgCal = monthCal / totalClosed;
     const avgProt = monthProt / totalClosed;
     const avgCarb = monthCarb / totalClosed;
@@ -1179,9 +1218,11 @@
 
     document.getElementById('monthlyRecommendation').textContent = state.closedDays.length === 0
       ? 'Cierra tu primer día para recibir una recomendación personalizada.'
-      : generateRecommendation(avgCal, pctCal, avgProt, pctProt, avgCarb, pctCarb, avgGrasa, pctGrasa, avgFibra, pctFibra);
+      : rangeDays.length === 0
+        ? `No hay días cerrados en los últimos ${range} días.`
+        : generateRecommendation(avgCal, pctCal, avgProt, pctProt, avgCarb, pctCarb, avgGrasa, pctGrasa, avgFibra, pctFibra);
 
-    document.getElementById('valDiasMes').textContent = `Días cerrados: ${state.closedDays.length}`;
+    document.getElementById('valDiasMes').textContent = `Días cerrados: ${rangeDays.length} de ${range}`;
 
     document.getElementById('valCaloriasMes').textContent = `${Math.round(avgCal).toLocaleString('es-MX')} kcal/día`;
     document.getElementById('targetCaloriasMes').textContent = `${pctCal}% de tu meta`;
@@ -1216,15 +1257,15 @@
     barAguaMes.style.width = Math.min(100, pctAgua) + '%';
     barAguaMes.classList.toggle('full', pctAgua >= 100);
 
-    const scoreData = calculateMonthlyScore();
+    const scoreData = calculateMonthlyScore(rangeDays);
     document.getElementById('monthlyScore').textContent = scoreData.score === '--' ? '-- / 10' : `${scoreData.score} / 10`;
     document.getElementById('monthlyScoreDesc').textContent = scoreData.text;
 
-    const hydrationData = calculateHydrationScore();
+    const hydrationData = calculateHydrationScore(rangeDays);
     document.getElementById('monthlyAguaScore').textContent = hydrationData.score === '--' ? '-- / 10' : `${hydrationData.score} / 10`;
     document.getElementById('monthlyAguaScoreDesc').textContent = hydrationData.text;
 
-    const extra = calculateExtraStats();
+    const extra = calculateExtraStats(rangeDays, state.closedDays);
     const extraIds = ['valRacha','valDiasEnMeta','valMejorDia','valPeorDia','valTendencia','valConsistencia'];
     if(extra){
       document.getElementById('valRacha').textContent = extra.racha === null ? 'N/D (días sin fecha)' : `${extra.racha} día${extra.racha === 1 ? '' : 's'}`;
@@ -1276,7 +1317,9 @@
     }
   }
 
-  function renderFoodRow(food, consumedQty, isConsumedSection){
+  // sectionName: solo se usa cuando la fila está en "Consumidos en el Día";
+  // define de qué sección se muestran los registros dentro del detalle.
+  function renderFoodRow(food, consumedQty, isConsumedSection, sectionName){
     const wrapper = document.createElement('div');
     const row = document.createElement('div');
 
@@ -1356,11 +1399,21 @@
       detail.querySelector('[data-act="editar"]').addEventListener('click', () => openFoodModal(food.id));
       detail.querySelector('[data-act="eliminar"]').addEventListener('click', () => deleteFood(food.id));
 
-      const foodEntries = state.currentDayEntries.filter(e => e.foodId === food.id);
+      // Sección que define qué entradas se muestran:
+      // - en "Consumidos": la sección de esa fila
+      // - en el catálogo: la pestaña activa (o todas si está en "Todos")
+      const sectionScope = isConsumedSection
+        ? sectionName
+        : (state.activeSection === 'todos' ? null : state.activeSection);
+
+      const foodEntries = state.currentDayEntries.filter(e =>
+        e.foodId === food.id &&
+        (!sectionScope || (e.section || 'Sin sección') === sectionScope)
+      );
       const txWrap = detail.querySelector('.tx-wrap');
 
       if(foodEntries.length === 0){
-        txWrap.innerHTML = '<div style="font-size:12px; color:var(--ink-soft);">Sin consumo en este día</div>';
+        txWrap.innerHTML = '<div style="font-size:12px; color:var(--ink-soft);">Sin consumo en esta sección</div>';
       } else {
         txWrap.innerHTML = foodEntries.map(e => `
           <div class="tx-row">
@@ -1393,6 +1446,13 @@
   btnToggleMonthly.addEventListener('click', () => {
     const isOpen = monthlyPanel.classList.toggle('open');
     btnToggleMonthly.textContent = isOpen ? '🙈 Ocultar Rendimiento Mensual' : '📊 Ver Rendimiento Mensual';
+  });
+
+  document.querySelectorAll('#rangeTabs .range-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.monthlyRange = Number(btn.dataset.range);
+      save(); render();
+    });
   });
 
   document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -1639,22 +1699,8 @@
     closeConsumoModal();
   });
 
-  document.getElementById('btnResetMes').addEventListener('click', () => {
-    if(confirm('Esto archivará el mes actual y empezará uno nuevo desde cero. El historial no se borra, queda guardado. ¿Continuar?')){
-      // Archiva el mes antes de limpiarlo, en vez de borrarlo para siempre
-      state.monthHistory.push({
-        archivedAt: new Date().toISOString(),
-        closedDays: state.closedDays,
-        goals: { ...state.goals }
-      });
-      state.currentDay = 1;
-      state.currentDayDate = todayISO();
-      state.currentDayEntries = [];
-      state.closedDays = [];
-      save(); render();
-    }
-  });
-
+  // "Cerrar mes entero" deshabilitado: el rendimiento usa ventanas móviles de 7, 14 y 30 días
+  // sobre el historial de días cerrados, que ya no se reinicia.
   render();
 })();
 </script>
