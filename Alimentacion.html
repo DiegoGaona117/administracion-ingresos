@@ -747,9 +747,9 @@
       foods: defaultFoods(),
       mealSections: [
         { name: 'Desayuno', active: true },
+        { name: 'Almuerzo', active: true },
         { name: 'Comida', active: true },
-        { name: 'Cena', active: true },
-        { name: 'Snacks', active: true }
+        { name: 'Cena', active: true }
       ],
       activeSection: 'Desayuno',
       monthlyRange: 30
@@ -774,9 +774,9 @@
       if(!data.mealSections || !Array.isArray(data.mealSections) || data.mealSections.length === 0){
         data.mealSections = [
           { name: 'Desayuno', active: true },
+          { name: 'Almuerzo', active: true },
           { name: 'Comida', active: true },
-          { name: 'Cena', active: true },
-          { name: 'Snacks', active: true }
+          { name: 'Cena', active: true }
         ];
       } else if(typeof data.mealSections[0] === 'string'){
         // Migración: versiones anteriores guardaban las secciones como texto simple
@@ -1474,18 +1474,28 @@
     const foodList = document.getElementById('foodList');
     foodList.innerHTML = '';
 
-    let sortedFoods = [...state.foods].sort((a,b) => {
-      const favDiff = (b.fav ? 1 : 0) - (a.fav ? 1 : 0);
-      if(favDiff !== 0) return favDiff;
-      return a.name.localeCompare(b.name, 'es');
-    });
-
-    if (searchFilter !== '') {
-      sortedFoods = sortedFoods.filter(f => f.name.toLowerCase().includes(searchFilter.toLowerCase()));
+    // Si no hay texto en el buscador: solo se muestran los favoritos, en orden alfabético,
+    // para que la lista no se vea saturada. El resto de los alimentos permanece oculto
+    // hasta que el usuario escriba algo en el buscador (ahí sí aparece todo el catálogo que coincida).
+    let sortedFoods;
+    if (searchFilter === '') {
+      sortedFoods = state.foods
+        .filter(f => f.fav)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    } else {
+      sortedFoods = state.foods
+        .filter(f => f.name.toLowerCase().includes(searchFilter.toLowerCase()))
+        .sort((a, b) => {
+          const favDiff = (b.fav ? 1 : 0) - (a.fav ? 1 : 0);
+          if(favDiff !== 0) return favDiff;
+          return a.name.localeCompare(b.name, 'es');
+        });
     }
 
     if (sortedFoods.length === 0) {
-      foodList.innerHTML = `<div class="no-results">No se encontraron alimentos.</div>`;
+      foodList.innerHTML = searchFilter === ''
+        ? `<div class="no-results">Aún no tienes favoritos. Usa el buscador de arriba para encontrar y marcar alimentos con ⭐.</div>`
+        : `<div class="no-results">No se encontraron alimentos.</div>`;
     } else {
       sortedFoods.forEach(food => foodList.appendChild(renderFoodRow(food, null, false)));
     }
