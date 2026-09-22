@@ -687,13 +687,13 @@
       { id: 'uva', name: 'Uva', icon: '🍇', unit: 'g', baseQty: 100, cal: 69, prot: 0.7, carb: 18.1, grasa: 0.2, fibra: 0.9, azucar: 15.5, azucarLibre: false, fav: false, quick: [50, 100, 150] },
       { id: 'sandia', name: 'Sandía', icon: '🍉', unit: 'g', baseQty: 100, cal: 30, prot: 0.6, carb: 7.6, grasa: 0.15, fibra: 0.4, azucar: 6.2, azucarLibre: false, fav: false, quick: [100, 200, 300] },
       { id: 'papaya', name: 'Papaya', icon: '🟠', unit: 'g', baseQty: 100, cal: 43, prot: 0.5, carb: 11.0, grasa: 0.3, fibra: 1.7, azucar: 7.8, azucarLibre: false, fav: false, quick: [100, 150, 200] },
-      { id: 'pan_blanco', name: 'Pan blanco Bimbo (rebanada)', icon: '🍞', unit: 'pz', baseQty: 1, cal: 66, prot: 2.1, carb: 12.5, grasa: 0.7, fibra: 0.6, azucar: 1.5, fav: false, quick: [1, 2, 3] },
+      { id: 'pan_blanco', name: 'Pan blanco Bimbo (rebanada)', icon: '🍞', unit: 'pz', baseQty: 1, cal: 72, prot: 2.7, carb: 13.0, grasa: 0.7, fibra: 0.6, azucar: 1.5, fav: false, quick: [1, 2, 3] },
       { id: 'pan_dulce', name: 'Pan dulce', icon: '🥐', unit: 'g', baseQty: 100, cal: 375, prot: 7.0, carb: 55.0, grasa: 14.0, fibra: 1.5, azucar: 20, fav: false, quick: [50, 100, 150] },
       { id: 'chetos', name: 'Chetos', icon: '🧀', unit: 'g', baseQty: 100, cal: 545, prot: 6.0, carb: 55.0, grasa: 33.0, fibra: 2.0, azucar: 2, fav: false, quick: [30, 50, 100] },
       { id: 'mermelada', name: 'Mermelada (cucharada)', icon: '🍓', unit: 'scoop', baseQty: 1, cal: 56, prot: 0.1, carb: 14.0, grasa: 0.0, fibra: 0.2, azucar: 13, fav: false, quick: [1, 2] },
       { id: 'nutela', name: 'Nutella (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 106, prot: 1.2, carb: 11.5, grasa: 6.1, fibra: 0.6, azucar: 10.5, fav: false, quick: [1, 2] },
-      { id: 'cocacola', name: 'Coca-Cola normal', icon: '🥤', unit: 'ml', baseQty: 100, cal: 39, prot: 0.0, carb: 10.6, grasa: 0.0, fibra: 0.0, azucar: 10.6, fav: false, quick: [100, 250, 355] },
-      { id: 'cocacola_zero', name: 'Coca-Cola Zero', icon: '🥤', unit: 'ml', baseQty: 100, cal: 0, prot: 0.0, carb: 0.1, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 250, 355] },
+      { id: 'cocacola', name: 'Coca-Cola normal', icon: '🥤', unit: 'ml', baseQty: 100, cal: 42, prot: 0.0, carb: 10.5, grasa: 0.0, fibra: 0.0, azucar: 10.5, fav: false, quick: [100, 250, 355] },
+      { id: 'cocacola_zero', name: 'Coca-Cola Zero', icon: '🥤', unit: 'ml', baseQty: 100, cal: 0, prot: 0.0, carb: 0.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 250, 355] },
       { id: 'chocomilk', name: 'Chocomilk en polvo (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 39, prot: 0.4, carb: 9.3, grasa: 0.3, fibra: 0.5, azucar: 8, fav: false, quick: [1, 2] },
       { id: 'leche_polvo', name: 'Leche en polvo descremada (scoop de 30g)', icon: '🥛', unit: 'scoop', baseQty: 1, cal: 108, prot: 10.5, carb: 15.5, grasa: 0.5, fibra: 0.0, azucar: 15, azucarLibre: false, fav: false, quick: [1, 2, 3] },
       { id: 'maruchan', name: 'Sopa Maruchan', icon: '🍜', unit: 'pz', baseQty: 1, cal: 380, prot: 7.0, carb: 51.0, grasa: 15.0, fibra: 2.0, azucar: 3, fav: false, quick: [1, 2] },
@@ -826,6 +826,26 @@
           }
         }
       });
+      // Actualiza Coca-Cola normal y Zero a los valores oficiales de Coca-Cola México por 100ml,
+      // solo si siguen con los valores estimados anteriores.
+      (() => {
+        const normal = data.foods.find(f => f.id === 'cocacola');
+        if(normal && normal.unit === 'ml' && normal.cal === 39){
+          normal.cal = 42; normal.carb = 10.5; normal.azucar = 10.5;
+        }
+        const zero = data.foods.find(f => f.id === 'cocacola_zero');
+        if(zero && zero.unit === 'ml' && zero.carb === 0.1){
+          zero.carb = 0; zero.azucar = 0;
+        }
+      })();
+      // Actualiza Pan Blanco Bimbo a los datos verificados de la rebanada real (29g, ~72 kcal),
+      // solo si sigue con el valor estimado anterior (66 kcal).
+      (() => {
+        const pan = data.foods.find(f => f.id === 'pan_blanco');
+        if(pan && pan.cal === 66){
+          pan.cal = 72; pan.prot = 2.7; pan.carb = 13.0;
+        }
+      })();
       // Migra la leche en polvo de "cucharada" (baseQty 1, valor original de siempre) o del estado roto
       // intermedio (baseQty 30 / cal 149, un bug de escala de una versión anterior) a la definición correcta:
       // baseQty 1 = un scoop de 30g, con datos de leche DESCREMADA (el bug anterior usaba leche entera).
@@ -883,6 +903,13 @@
       // food.azucarLibre === false marca esos casos; en todo lo demás, azúcar total = azúcar libre.
       azucarLibre: food.azucarLibre === false ? 0 : azucarTotal
     };
+  }
+
+  // Nutrientes de un registro ya hecho: usa la copia congelada al momento de registrarlo (entry.n).
+  // Si el registro es de antes de que existiera esta copia congelada (entradas de hoy ya guardadas
+  // en tu navegador antes de esta actualización), recalcula al vuelo como se hacía antes, para no perderlas.
+  function getEntryNutrients(entry, food){
+    return entry.n || foodNutrientsByQty(food, entry.qty);
   }
 
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
@@ -1178,12 +1205,25 @@
 
     // secName = sección a la que pertenecen estas entradas; se pasa a cada fila
     // para que su detalle solo muestre los registros de esa sección.
+    // Suma tanto la cantidad como los nutrientes YA CONGELADOS de cada registro — así, si
+    // editas el alimento después, esta lista sigue mostrando lo que se guardó al registrarlo.
     function appendAggregatedRows(entries, secName){
       const aggregated = {};
-      entries.forEach(e => { aggregated[e.foodId] = (aggregated[e.foodId] || 0) + e.qty; });
+      entries.forEach(e => {
+        const food = state.foods.find(f => f.id === e.foodId);
+        if(!food) return;
+        const n = getEntryNutrients(e, food);
+        if(!aggregated[e.foodId]){
+          aggregated[e.foodId] = { qty: 0, n: { cal:0, prot:0, carb:0, grasa:0, fibra:0, azucar:0, azucarLibre:0 } };
+        }
+        const agg = aggregated[e.foodId];
+        agg.qty += e.qty;
+        agg.n.cal += n.cal; agg.n.prot += n.prot; agg.n.carb += n.carb;
+        agg.n.grasa += n.grasa; agg.n.fibra += n.fibra; agg.n.azucar += n.azucar; agg.n.azucarLibre += n.azucarLibre;
+      });
       Object.keys(aggregated).forEach(foodId => {
         const food = state.foods.find(f => f.id === foodId);
-        if(food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId], true, secName));
+        if(food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId].qty, true, secName, aggregated[foodId].n));
       });
     }
 
@@ -1233,7 +1273,7 @@
       if(!isEntrySectionActive(entry)) return;
       const food = state.foods.find(f => f.id === entry.foodId);
       if(food){
-        const n = foodNutrientsByQty(food, entry.qty);
+        const n = getEntryNutrients(entry, food);
         todayCal += n.cal;
         todayProt += n.prot;
         todayCarb += n.carb;
@@ -1598,7 +1638,11 @@
     const f = state.foods.find(item => item.id === foodId);
     if(!f || !qty || qty <= 0) return;
     const section = state.activeSection === 'todos' ? ((state.mealSections[0] && state.mealSections[0].name) || 'Sin sección') : state.activeSection;
-    state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty), section });
+    // Se congela una copia de los nutrientes tal como están HOY en el catálogo. Si más adelante
+    // editas este alimento (corriges sus datos, cambias su unidad, etc.), este registro ya hecho
+    // conserva los valores con los que se guardó, en vez de recalcularse solo.
+    const n = foodNutrientsByQty(f, Number(qty));
+    state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty), section, n });
     openFoodId = f.id;
     save(); render();
   }
@@ -1645,7 +1689,7 @@
       if(!isEntrySectionActive(entry)) return;
       const food = state.foods.find(f => f.id === entry.foodId);
       if(food){
-        const n = foodNutrientsByQty(food, entry.qty);
+        const n = getEntryNutrients(entry, food);
         dayCal += n.cal;
         dayProt += n.prot;
         dayCarb += n.carb;
