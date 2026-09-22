@@ -88,6 +88,7 @@
   .progress-bar.fibra{ background:#0EA5A0; }
   .progress-bar.azucar{ background:#EC4899; }
   .progress-bar.azucar.over{ background:var(--red); }
+  .progress-bar.azucartotal{ background:#CBD5E1; }
   .progress-bar.agua{ background:var(--water); }
   .progress-bar.agua.full{ background:var(--green); }
 
@@ -432,11 +433,18 @@
 
     <div class="main-stat">
       <div class="stat-labels">
-        <span class="num" style="font-size:18px;" id="valAzucar">0g Azúcar libre</span>
-        <span class="target-text" id="targetAzucar">Límite: 0g</span>
+        <span class="num" style="font-size:18px;" id="valAzucarLibre">0g Azúcar libre</span>
+        <span class="target-text" id="targetAzucarLibre">Límite: 0g</span>
       </div>
-      <div class="progress-bg"><div class="progress-bar azucar" id="barAzucar"></div></div>
-      <div class="field-hint" id="azucarTotalHint" style="margin-top:2px;">Azúcar total (incl. natural de fruta/lácteos): 0g</div>
+      <div class="progress-bg"><div class="progress-bar azucar" id="barAzucarLibre"></div></div>
+    </div>
+
+    <div class="main-stat">
+      <div class="stat-labels">
+        <span class="num" style="font-size:18px;" id="valAzucarTotal">0g Azúcar total</span>
+        <span class="target-text">Incl. natural de fruta/lácteos</span>
+      </div>
+      <div class="progress-bg"><div class="progress-bar azucartotal" id="barAzucarTotal"></div></div>
     </div>
   </div>
 
@@ -1329,12 +1337,16 @@
     document.getElementById('targetFibra').textContent = `Meta: ${state.goals.dailyFibra}g`;
     document.getElementById('barFibra').style.width = (Math.min(100, Math.round((todayFibra / state.goals.dailyFibra) * 100)) || 0) + '%';
 
-    document.getElementById('valAzucar').textContent = `${Math.round(todayAzucarLibre)}g Azúcar libre`;
-    document.getElementById('targetAzucar').textContent = `Límite: ${state.goals.dailyAzucar}g`;
-    const barAzucarDia = document.getElementById('barAzucar');
+    document.getElementById('valAzucarLibre').textContent = `${Math.round(todayAzucarLibre)}g Azúcar libre`;
+    document.getElementById('targetAzucarLibre').textContent = `Límite: ${state.goals.dailyAzucar}g`;
+    const barAzucarDia = document.getElementById('barAzucarLibre');
     barAzucarDia.style.width = (Math.min(100, Math.round((todayAzucarLibre / state.goals.dailyAzucar) * 100)) || 0) + '%';
     barAzucarDia.classList.toggle('over', todayAzucarLibre > state.goals.dailyAzucar);
-    document.getElementById('azucarTotalHint').textContent = `Azúcar total (incl. natural de fruta/lácteos): ${Math.round(todayAzucar)}g`;
+
+    document.getElementById('valAzucarTotal').textContent = `${Math.round(todayAzucar)}g Azúcar total`;
+    const barAzucarTotalDia = document.getElementById('barAzucarTotal');
+    // Referencia visual: se escala contra el mismo límite de azúcar libre, pero nunca se marca como "excedida"
+    barAzucarTotalDia.style.width = (Math.min(100, Math.round((todayAzucar / state.goals.dailyAzucar) * 100)) || 0) + '%';
 
 
     // Hidratación del día (aparte del resto de nutrientes)
