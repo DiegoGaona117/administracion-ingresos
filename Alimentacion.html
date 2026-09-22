@@ -577,7 +577,8 @@
           <option value="pz">Piezas / Unidades</option>
           <option value="lata">Lata / Envase</option>
           <option value="ml">Mililitros (ml)</option>
-          <option value="scoop">Scoops / Cucharadas</option>
+          <option value="cda">Cucharadas (cda)</option>
+          <option value="scoop">Scoops</option>
         </select>
       </div>
     </div>
@@ -645,13 +646,14 @@
 
   function defaultQuickForUnit(unit){
     if(unit === 'pz' || unit === 'lata') return [0.5, 1, 2];
-    if(unit === 'scoop') return [1, 2];
+    if(unit === 'scoop' || unit === 'cda') return [1, 2];
     return [50, 100, 200];
   }
 
   function defaultFoods(){
     return [
       { id: 'huevo', name: 'Huevo', icon: '🥚', unit: 'pz', baseQty: 1, cal: 72, prot: 6.3, carb: 0.4, grasa: 4.8, fibra: 0, azucar: 0.2, fav: true, quick: [1, 2, 3] },
+      { id: 'aceite', name: 'Aceite (para cocinar)', icon: '🫒', unit: 'cda', baseQty: 1, cal: 120, prot: 0.0, carb: 0.0, grasa: 14.0, fibra: 0, azucar: 0, fav: true, quick: [0.5, 1, 2], qualityExempt: true },
       { id: 'frijoles', name: 'Frijoles cocidos', icon: '🫘', unit: 'g', baseQty: 100, cal: 95, prot: 6.0, carb: 17.0, grasa: 0.5, fibra: 5.5, azucar: 0.3, fav: true, quick: [100, 150, 200] },
       { id: 'atun', name: 'Atún en agua', icon: '🐟', unit: 'lata', baseQty: 1, cal: 116, prot: 26.0, carb: 0.0, grasa: 1.0, fibra: 0, azucar: 0, fav: true, quick: [0.5, 1, 2] },
       { id: 'tortillas', name: 'Tortillas de maíz', icon: '🌮', unit: 'pz', baseQty: 1, cal: 52, prot: 1.4, carb: 11.0, grasa: 0.7, fibra: 1.5, azucar: 0, fav: true, quick: [1, 2, 3, 4] },
@@ -690,16 +692,17 @@
       { id: 'papaya', name: 'Papaya', icon: '🟠', unit: 'g', baseQty: 100, cal: 43, prot: 0.5, carb: 11.0, grasa: 0.3, fibra: 1.7, azucar: 7.8, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'pan_blanco', name: 'Pan blanco Bimbo (rebanada)', icon: '🍞', unit: 'pz', baseQty: 1, cal: 72, prot: 2.7, carb: 13.0, grasa: 0.7, fibra: 0.6, azucar: 1.5, fav: false, quick: [1, 2, 3] },
       { id: 'pan_dulce', name: 'Pan dulce', icon: '🥐', unit: 'g', baseQty: 100, cal: 375, prot: 7.0, carb: 55.0, grasa: 14.0, fibra: 1.5, azucar: 20, fav: false, quick: [50, 100, 150] },
+      { id: 'pastel', name: 'Pastel', icon: '🍰', unit: 'g', baseQty: 100, cal: 371, prot: 4.5, carb: 51.0, grasa: 16.0, fibra: 1.0, azucar: 33, fav: false, quick: [50, 100, 150] },
       { id: 'chetos', name: 'Chetos', icon: '🧀', unit: 'g', baseQty: 100, cal: 545, prot: 6.0, carb: 55.0, grasa: 33.0, fibra: 2.0, azucar: 2, fav: false, quick: [30, 50, 100] },
-      { id: 'mermelada', name: 'Mermelada (cucharada)', icon: '🍓', unit: 'scoop', baseQty: 1, cal: 56, prot: 0.1, carb: 14.0, grasa: 0.0, fibra: 0.2, azucar: 13, fav: false, quick: [1, 2] },
-      { id: 'nutela', name: 'Nutella (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 106, prot: 1.2, carb: 11.5, grasa: 6.1, fibra: 0.6, azucar: 10.5, fav: false, quick: [1, 2] },
+      { id: 'mermelada', name: 'Mermelada (cucharada)', icon: '🍓', unit: 'cda', baseQty: 1, cal: 56, prot: 0.1, carb: 14.0, grasa: 0.0, fibra: 0.2, azucar: 13, fav: false, quick: [1, 2] },
+      { id: 'nutela', name: 'Nutella (cucharada)', icon: '🍫', unit: 'cda', baseQty: 1, cal: 106, prot: 1.2, carb: 11.5, grasa: 6.1, fibra: 0.6, azucar: 10.5, fav: false, quick: [1, 2] },
       { id: 'cocacola', name: 'Coca-Cola normal', icon: '🥤', unit: 'ml', baseQty: 100, cal: 42, prot: 0.0, carb: 10.5, grasa: 0.0, fibra: 0.0, azucar: 10.5, fav: false, quick: [100, 250, 355] },
       { id: 'cocacola_zero', name: 'Coca-Cola Zero', icon: '🥤', unit: 'ml', baseQty: 100, cal: 0, prot: 0.0, carb: 0.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 250, 355] },
-      { id: 'chocomilk', name: 'Chocomilk en polvo (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 39, prot: 0.4, carb: 9.3, grasa: 0.3, fibra: 0.5, azucar: 8, fav: false, quick: [1, 2] },
+      { id: 'chocomilk', name: 'Chocomilk en polvo (cucharada)', icon: '🍫', unit: 'cda', baseQty: 1, cal: 39, prot: 0.4, carb: 9.3, grasa: 0.3, fibra: 0.5, azucar: 8, fav: false, quick: [1, 2] },
       { id: 'leche_polvo', name: 'Leche en polvo descremada (scoop de 30g)', icon: '🥛', unit: 'scoop', baseQty: 1, cal: 108, prot: 10.5, carb: 15.5, grasa: 0.5, fibra: 0.0, azucar: 15, azucarLibre: false, fav: false, quick: [1, 2, 3] },
       { id: 'maruchan', name: 'Sopa Maruchan', icon: '🍜', unit: 'pz', baseQty: 1, cal: 380, prot: 7.0, carb: 51.0, grasa: 15.0, fibra: 2.0, azucar: 3, fav: false, quick: [1, 2] },
       { id: 'pizza', name: 'Pizza (rebanada)', icon: '🍕', unit: 'pz', baseQty: 1, cal: 285, prot: 12.0, carb: 36.0, grasa: 10.0, fibra: 2.5, azucar: 4, fav: false, quick: [1, 2, 3] },
-      { id: 'azucar', name: 'Azúcar (cucharada)', icon: '🥄', unit: 'scoop', baseQty: 1, cal: 49, prot: 0.0, carb: 12.6, grasa: 0.0, fibra: 0.0, azucar: 12.6, fav: false, quick: [1, 2, 3] },
+      { id: 'azucar', name: 'Azúcar (cucharada)', icon: '🥄', unit: 'cda', baseQty: 1, cal: 49, prot: 0.0, carb: 12.6, grasa: 0.0, fibra: 0.0, azucar: 12.6, fav: false, quick: [1, 2, 3] },
       { id: 'cafe', name: 'Café negro (taza)', icon: '☕', unit: 'pz', baseQty: 1, cal: 2, prot: 0.3, carb: 0.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [1, 2, 3] },
       { id: 'sopa_fideo', name: 'Sopa de fideo con caldo', icon: '🍜', unit: 'g', baseQty: 100, cal: 40, prot: 1.2, carb: 6.0, grasa: 1.2, fibra: 0.3, azucar: 0.5, fav: false, quick: [200, 300, 400] },
       { id: 'salchicha', name: 'Salchicha', icon: '🌭', unit: 'pz', baseQty: 1, cal: 85, prot: 3.4, carb: 0.8, grasa: 7.7, fibra: 0.0, azucar: 0.3, fav: false, quick: [1, 2, 3] },
@@ -707,12 +710,13 @@
       { id: 'pollo', name: 'Pollo (pechuga cocida)', icon: '🍗', unit: 'g', baseQty: 100, cal: 165, prot: 31.0, carb: 0.0, grasa: 3.6, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
       { id: 'carne_res', name: 'Carne de res', icon: '🥩', unit: 'g', baseQty: 100, cal: 250, prot: 26.0, carb: 0.0, grasa: 15.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
       { id: 'carne_puerco', name: 'Carne de puerco', icon: '🥩', unit: 'g', baseQty: 100, cal: 242, prot: 27.0, carb: 0.0, grasa: 14.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'carnitas', name: 'Carnitas', icon: '🐷', unit: 'g', baseQty: 100, cal: 280, prot: 25.0, carb: 0.0, grasa: 20.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
       { id: 'longaniza', name: 'Longaniza', icon: '🌭', unit: 'g', baseQty: 100, cal: 330, prot: 15.0, carb: 2.0, grasa: 29.0, fibra: 0.0, azucar: 0.5, fav: false, quick: [50, 100, 150] },
       { id: 'chorizo', name: 'Chorizo', icon: '🌭', unit: 'g', baseQty: 100, cal: 455, prot: 24.0, carb: 2.0, grasa: 38.0, fibra: 0.0, azucar: 0.5, fav: false, quick: [30, 50, 100] },
       { id: 'quesadilla', name: 'Quesadillas', icon: '🫓', unit: 'pz', baseQty: 1, cal: 220, prot: 9.0, carb: 18.0, grasa: 12.0, fibra: 1.0, azucar: 1, fav: false, quick: [1, 2, 3] },
       { id: 'sopa_crema', name: 'Sopa con crema', icon: '🥣', unit: 'g', baseQty: 100, cal: 90, prot: 2.0, carb: 8.0, grasa: 6.0, fibra: 1.0, azucar: 2, fav: false, quick: [200, 300, 400] },
       { id: 'yogurt_bebible', name: 'Yogurt bebible dulce', icon: '🥤', unit: 'ml', baseQty: 100, cal: 85, prot: 2.5, carb: 14.0, grasa: 2.0, fibra: 0.0, azucar: 13, fav: false, quick: [200, 250, 500] },
-      { id: 'maicena', name: 'Maicena (cucharada)', icon: '🥄', unit: 'scoop', baseQty: 1, cal: 29, prot: 0.0, carb: 7.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [1, 2, 3] },
+      { id: 'maicena', name: 'Maicena (cucharada)', icon: '🥄', unit: 'cda', baseQty: 1, cal: 29, prot: 0.0, carb: 7.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [1, 2, 3] },
       { id: 'arroz_leche', name: 'Arroz con leche', icon: '🍚', unit: 'g', baseQty: 100, cal: 120, prot: 3.0, carb: 22.0, grasa: 2.5, fibra: 0.3, azucar: 14, fav: false, quick: [100, 150, 200] },
       { id: 'mole', name: 'Mole', icon: '🍛', unit: 'g', baseQty: 100, cal: 150, prot: 4.0, carb: 12.0, grasa: 10.0, fibra: 2.0, azucar: 6, fav: false, quick: [50, 100, 150] },
       { id: 'rollo_jamon_queso', name: 'Rollos de jamón con queso empanizados', icon: '🧀', unit: 'pz', baseQty: 1, cal: 180, prot: 8.0, carb: 12.0, grasa: 11.0, fibra: 0.5, azucar: 1.5, fav: false, quick: [1, 2, 3] },
@@ -807,6 +811,13 @@
         if(existing && existing.azucarLibre === undefined) existing.azucarLibre = (df.azucarLibre === false) ? false : true;
       });
       data.foods.forEach(f => { if(f.azucarLibre === undefined) f.azucarLibre = true; });
+      // Corrige la unidad de alimentos que en realidad se miden por cucharada, no por "scoop"
+      // (scoop se reserva para polvos con medidor propio, como proteína o leche en polvo).
+      // Solo se migra si el usuario no había cambiado ya la unidad manualmente.
+      ['mermelada', 'nutela', 'chocomilk', 'azucar', 'maicena', 'aceite'].forEach(id => {
+        const f = data.foods.find(item => item.id === id);
+        if(f && f.unit === 'scoop') f.unit = 'cda';
+      });
       // Corrige el default de "proteína en polvo" de [1,2] a [0.5,1] solo si nadie lo había personalizado
       const prot = data.foods.find(f => f.id === 'proteina');
       if(prot && Array.isArray(prot.quick) && prot.quick.length === 2 && prot.quick[0] === 1 && prot.quick[1] === 2){
