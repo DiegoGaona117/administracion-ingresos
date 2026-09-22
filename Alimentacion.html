@@ -31,7 +31,7 @@
   .wrap{max-width:520px; margin:0 auto; padding:22px 10px 90px;}
 
   .toggle-monthly-container{
-    display:flex; justify-content:flex-end; margin-bottom:12px;
+    display:flex; justify-content:flex-end; gap:8px; margin-bottom:12px;
   }
   .btn-toggle-monthly{
     border:1.5px solid var(--line); background:var(--card); color:var(--ink);
@@ -263,6 +263,7 @@
 <div class="wrap">
 
   <div class="toggle-monthly-container">
+    <button class="btn-toggle-monthly" id="btnSimpleMode">🧩 Modo Simple</button>
     <button class="btn-toggle-monthly" id="btnToggleMonthly">📊 Ver Rendimiento Mensual</button>
   </div>
 
@@ -441,8 +442,8 @@
 
   <!-- PANEL DE AGUA (aparte del panel nutricional) -->
   <div class="summary-card" id="waterCard">
-    <div class="summary-header">
-      <span class="summary-title">Hidratación del Día 💧</span>
+    <div class="summary-header" id="waterHeaderToggle" style="cursor:pointer;">
+      <span class="summary-title">Hidratación del Día 💧 <span id="waterToggleArrow" style="font-size:10px;">▸</span></span>
       <span class="summary-days" id="valAguaScore">-- / 10</span>
     </div>
 
@@ -470,7 +471,7 @@
   </div>
 
   <!-- SECCIONES DE COMIDA -->
-  <div class="section-title">
+  <div class="section-title" id="mealSectionTitleRow">
     <h2>Comidas del Día</h2>
     <button id="btnAddMeal">+ Agregar sección</button>
   </div>
@@ -752,7 +753,8 @@
         { name: 'Cena', active: true }
       ],
       activeSection: 'Desayuno',
-      monthlyRange: 30
+      monthlyRange: 30,
+      simpleMode: false
     };
   }
 
@@ -784,6 +786,7 @@
       }
       if(!data.activeSection) data.activeSection = data.mealSections[0].name || 'todos';
       if(![7, 14, 30].includes(data.monthlyRange)) data.monthlyRange = 30;
+      if(data.simpleMode === undefined) data.simpleMode = false;
       // Agrega alimentos nuevos del catálogo (ej. frutas) sin tocar los que el usuario ya tiene/editó
       const existingIds = new Set(data.foods.map(f => f.id));
       defaultFoods().forEach(df => {
@@ -888,6 +891,7 @@
   let state = load();
   let openFoodId = null;
   let searchFilter = '';
+  let waterListOpen = false;
 
   function foodNutrientsByQty(food, qty){
     const factor = qty / (food.baseQty || 1);
@@ -1137,6 +1141,7 @@
   function renderMealTabs(){
     const wrap = document.getElementById('mealTabs');
     wrap.innerHTML = '';
+    if(state.simpleMode) return;
 
     // Tab "Todos": solo vista, no tiene check ni se puede borrar
     const allBtn = document.createElement('button');
@@ -1225,6 +1230,11 @@
         const food = state.foods.find(f => f.id === foodId);
         if(food) consumedList.appendChild(renderFoodRow(food, aggregated[foodId].qty, true, secName, aggregated[foodId].n));
       });
+    }
+
+    if(state.simpleMode){
+      appendAggregatedRows(state.currentDayEntries, null);
+      return;
     }
 
     if(state.activeSection === 'todos'){
@@ -1468,6 +1478,14 @@
       extraIds.forEach(id => { document.getElementById(id).textContent = '--'; });
     }
 
+    document.getElementById('btnSimpleMode').textContent = state.simpleMode ? '📋 Modo Detallado' : '🧩 Modo Simple';
+    document.getElementById('mealSectionTitleRow').style.display = state.simpleMode ? 'none' : 'flex';
+    document.getElementById('mealSectionHint').style.display = state.simpleMode ? 'none' : 'block';
+    document.getElementById('mealTabs').style.display = state.simpleMode ? 'none' : 'flex';
+
+    document.getElementById('waterToggleArrow').textContent = waterListOpen ? '▾' : '▸';
+    document.getElementById('aguaTxWrap').style.display = waterListOpen ? 'block' : 'none';
+
     renderMealTabs();
     renderConsumedList();
 
@@ -1518,6 +1536,9 @@
       ? (() => {
           const n = foodNutrientsByQty(food, consumedQty);
           const round1 = (v) => Math.round(v * 10) / 10;
+          if(state.simpleMode){
+            return `${Math.round(n.cal)} kcal · ${round1(n.prot)}g prot`;
+          }
           return `${Math.round(n.cal)} kcal · ${round1(n.prot)}g prot · ${round1(n.carb)}g carb · ${round1(n.grasa)}g grasa · ${round1(n.fibra)}g fibra · ${round1(n.azucar)}g azúcar`;
         })()
       : `${food.cal} kcal / ${food.baseQty}${food.unit}`;
@@ -1563,10 +1584,11 @@
           ${quickBtns}
           <button class="quick-amt-btn" data-qty="custom">+ Otra cant.</button>
         </div>
+        ${state.simpleMode ? '' : `
         <div class="detail-actions">
           <button class="chip-btn ghost" data-act="editar">Editar alimento</button>
           <button class="chip-btn danger" data-act="eliminar">Eliminar</button>
-        </div>
+        </div>`}
         <div class="tx-wrap"></div>
       `;
 
@@ -1580,15 +1602,17 @@
         });
       });
 
-      detail.querySelector('[data-act="editar"]').addEventListener('click', () => openFoodModal(food.id));
-      detail.querySelector('[data-act="eliminar"]').addEventListener('click', () => deleteFood(food.id));
+      const editBtn = detail.querySelector('[data-act="editar"]');
+      if(editBtn) editBtn.addEventListener('click', () => openFoodModal(food.id));
+      const delBtn = detail.querySelector('[data-act="eliminar"]');
+      if(delBtn) delBtn.addEventListener('click', () => deleteFood(food.id));
 
       // Sección que define qué entradas se muestran:
       // - en "Consumidos": la sección de esa fila
-      // - en el catálogo: la pestaña activa (o todas si está en "Todos")
+      // - en el catálogo: la pestaña activa (o todas si está en "Todos"), o ninguna en Modo Simple
       const sectionScope = isConsumedSection
         ? sectionName
-        : (state.activeSection === 'todos' ? null : state.activeSection);
+        : (state.simpleMode || state.activeSection === 'todos' ? null : state.activeSection);
 
       const foodEntries = state.currentDayEntries.filter(e =>
         e.foodId === food.id &&
@@ -1639,6 +1663,16 @@
     });
   });
 
+  document.getElementById('btnSimpleMode').addEventListener('click', () => {
+    state.simpleMode = !state.simpleMode;
+    save(); render();
+  });
+
+  document.getElementById('waterHeaderToggle').addEventListener('click', () => {
+    waterListOpen = !waterListOpen;
+    render();
+  });
+
   document.getElementById('searchInput').addEventListener('input', (e) => {
     searchFilter = e.target.value.trim();
     render();
@@ -1647,7 +1681,9 @@
   function registerConsumo(foodId, qty){
     const f = state.foods.find(item => item.id === foodId);
     if(!f || !qty || qty <= 0) return;
-    const section = state.activeSection === 'todos' ? ((state.mealSections[0] && state.mealSections[0].name) || 'Sin sección') : state.activeSection;
+    const section = (state.simpleMode || state.activeSection === 'todos')
+      ? ((state.mealSections[0] && state.mealSections[0].name) || 'Sin sección')
+      : state.activeSection;
     // Se congela una copia de los nutrientes tal como están HOY en el catálogo. Si más adelante
     // editas este alimento (corriges sus datos, cambias su unidad, etc.), este registro ya hecho
     // conserva los valores con los que se guardó, en vez de recalcularse solo.
