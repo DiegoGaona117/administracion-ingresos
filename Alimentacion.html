@@ -695,7 +695,7 @@
       { id: 'cocacola', name: 'Coca-Cola normal', icon: '🥤', unit: 'ml', baseQty: 100, cal: 39, prot: 0.0, carb: 10.6, grasa: 0.0, fibra: 0.0, azucar: 10.6, fav: false, quick: [100, 250, 355] },
       { id: 'cocacola_zero', name: 'Coca-Cola Zero', icon: '🥤', unit: 'ml', baseQty: 100, cal: 0, prot: 0.0, carb: 0.1, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 250, 355] },
       { id: 'chocomilk', name: 'Chocomilk en polvo (cucharada)', icon: '🍫', unit: 'scoop', baseQty: 1, cal: 39, prot: 0.4, carb: 9.3, grasa: 0.3, fibra: 0.5, azucar: 8, fav: false, quick: [1, 2] },
-      { id: 'leche_polvo', name: 'Leche en polvo', icon: '🥛', unit: 'scoop', baseQty: 30, cal: 149, prot: 7.9, carb: 11.5, grasa: 8.0, fibra: 0.0, azucar: 11.5, azucarLibre: false, fav: false, quick: [1, 2, 3] },
+      { id: 'leche_polvo', name: 'Leche en polvo descremada (scoop de 30g)', icon: '🥛', unit: 'scoop', baseQty: 1, cal: 108, prot: 10.5, carb: 15.5, grasa: 0.5, fibra: 0.0, azucar: 15, azucarLibre: false, fav: false, quick: [1, 2, 3] },
       { id: 'maruchan', name: 'Sopa Maruchan', icon: '🍜', unit: 'pz', baseQty: 1, cal: 380, prot: 7.0, carb: 51.0, grasa: 15.0, fibra: 2.0, azucar: 3, fav: false, quick: [1, 2] },
       { id: 'pizza', name: 'Pizza (rebanada)', icon: '🍕', unit: 'pz', baseQty: 1, cal: 285, prot: 12.0, carb: 36.0, grasa: 10.0, fibra: 2.5, azucar: 4, fav: false, quick: [1, 2, 3] },
       { id: 'azucar', name: 'Azúcar (cucharada)', icon: '🥄', unit: 'scoop', baseQty: 1, cal: 49, prot: 0.0, carb: 12.6, grasa: 0.0, fibra: 0.0, azucar: 12.6, fav: false, quick: [1, 2, 3] },
@@ -826,10 +826,14 @@
           }
         }
       });
-      // Migra la leche en polvo de "cucharada" (baseQty 1) a "scoop de 30g", solo si sigue con los valores originales
+      // Migra la leche en polvo de "cucharada" (baseQty 1, valor original de siempre) o del estado roto
+      // intermedio (baseQty 30 / cal 149, un bug de escala de una versión anterior) a la definición correcta:
+      // baseQty 1 = un scoop de 30g, con datos de leche DESCREMADA (el bug anterior usaba leche entera).
       (() => {
         const lp = data.foods.find(f => f.id === 'leche_polvo');
-        if(lp && lp.baseQty === 1 && lp.cal === 40){
+        const eraOriginal = lp && lp.baseQty === 1 && lp.cal === 40;
+        const eraRoto = lp && lp.baseQty === 30 && lp.cal === 149;
+        if(lp && (eraOriginal || eraRoto)){
           const fresh = defaultFoods().find(f => f.id === 'leche_polvo');
           if(fresh){
             lp.name = fresh.name;
@@ -840,6 +844,7 @@
             lp.grasa = fresh.grasa;
             lp.fibra = fresh.fibra;
             lp.azucar = fresh.azucar;
+            lp.azucarLibre = fresh.azucarLibre;
           }
         }
       })();
