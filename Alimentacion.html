@@ -652,29 +652,29 @@
 
   function defaultFoods(){
     return [
-      { id: 'huevo', name: 'Huevo', icon: '🥚', unit: 'pz', baseQty: 1, cal: 72, prot: 6.3, carb: 0.4, grasa: 4.8, fibra: 0, azucar: 0.2, fav: true, quick: [1, 2, 3] },
+      { id: 'huevo', name: 'Huevo', icon: '🥚', unit: 'pz', baseQty: 1, cal: 72, prot: 6.3, carb: 0.4, grasa: 4.8, fibra: 0, azucar: 0.2, azucarLibre: false, fav: true, quick: [1, 2, 3] },
       { id: 'aceite', name: 'Aceite (para cocinar)', icon: '🫒', unit: 'cda', baseQty: 1, cal: 120, prot: 0.0, carb: 0.0, grasa: 14.0, fibra: 0, azucar: 0, fav: true, quick: [0.5, 1, 2], qualityExempt: true },
-      { id: 'frijoles', name: 'Frijoles cocidos', icon: '🫘', unit: 'g', baseQty: 100, cal: 95, prot: 6.0, carb: 17.0, grasa: 0.5, fibra: 5.5, azucar: 0.3, fav: true, quick: [100, 150, 200] },
+      { id: 'frijoles', name: 'Frijoles cocidos', icon: '🫘', unit: 'g', baseQty: 100, cal: 95, prot: 6.0, carb: 17.0, grasa: 0.5, fibra: 5.5, azucar: 0.3, azucarLibre: false, fav: true, quick: [100, 150, 200] },
       { id: 'atun', name: 'Atún en agua', icon: '🐟', unit: 'lata', baseQty: 1, cal: 116, prot: 26.0, carb: 0.0, grasa: 1.0, fibra: 0, azucar: 0, fav: true, quick: [0.5, 1, 2] },
       { id: 'tortillas', name: 'Tortillas de maíz', icon: '🌮', unit: 'pz', baseQty: 1, cal: 52, prot: 1.4, carb: 11.0, grasa: 0.7, fibra: 1.5, azucar: 0, fav: true, quick: [1, 2, 3, 4] },
       { id: 'sardinas', name: 'Sardinas en jitomate', icon: '🥫', unit: 'lata', baseQty: 1, cal: 190, prot: 22.0, carb: 2.0, grasa: 10.0, fibra: 0, azucar: 0, fav: false, quick: [0.5, 1] },
       { id: 'filete_pescado', name: 'Filete de pescado / Tilapia', icon: '🐠', unit: 'g', baseQty: 100, cal: 96, prot: 20.0, carb: 0.0, grasa: 1.7, fibra: 0, azucar: 0, fav: false, quick: [100, 150, 200] },
-      { id: 'claras', name: 'Claras de huevo', icon: '🍳', unit: 'ml', baseQty: 100, cal: 52, prot: 11.0, carb: 0.7, grasa: 0.2, fibra: 0, azucar: 0.7, fav: false, quick: [100, 150, 200] },
+      { id: 'claras', name: 'Claras de huevo', icon: '🍳', unit: 'ml', baseQty: 100, cal: 52, prot: 11.0, carb: 0.7, grasa: 0.2, fibra: 0, azucar: 0.7, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'proteina', name: 'Proteína en polvo', icon: '🥤', unit: 'scoop', baseQty: 1, cal: 120, prot: 24.0, carb: 2.0, grasa: 1.5, fibra: 0, azucar: 1, fav: false, quick: [0.5, 1] },
-      { id: 'lentejas', name: 'Lentejas cocidas', icon: '🍲', unit: 'g', baseQty: 100, cal: 116, prot: 9.0, carb: 20.0, grasa: 0.4, fibra: 7.9, azucar: 1.8, fav: false, quick: [100, 150, 200] },
-      { id: 'garbanzos', name: 'Garbanzos cocidos', icon: '🧆', unit: 'g', baseQty: 100, cal: 164, prot: 8.9, carb: 27.0, grasa: 2.6, fibra: 7.6, azucar: 4.8, fav: false, quick: [100, 150, 200] },
-      { id: 'soya', name: 'Soya texturizada (seca)', icon: '🌾', unit: 'g', baseQty: 50, cal: 168, prot: 25.0, carb: 15.0, grasa: 0.6, fibra: 8.0, azucar: 4, fav: false, quick: [30, 50, 80] },
+      { id: 'lentejas', name: 'Lentejas cocidas', icon: '🍲', unit: 'g', baseQty: 100, cal: 116, prot: 9.0, carb: 20.0, grasa: 0.4, fibra: 7.9, azucar: 1.8, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'garbanzos', name: 'Garbanzos cocidos', icon: '🧆', unit: 'g', baseQty: 100, cal: 164, prot: 8.9, carb: 27.0, grasa: 2.6, fibra: 7.6, azucar: 4.8, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'soya', name: 'Soya texturizada (seca)', icon: '🌾', unit: 'g', baseQty: 50, cal: 168, prot: 25.0, carb: 15.0, grasa: 0.6, fibra: 8.0, azucar: 4, azucarLibre: false, fav: false, quick: [30, 50, 80] },
       { id: 'queso_panela', name: 'Queso fresco / Panela', icon: '🧀', unit: 'g', baseQty: 100, cal: 240, prot: 18.0, carb: 3.0, grasa: 17.0, fibra: 0, azucar: 1, azucarLibre: false, fav: false, quick: [30, 50, 100] },
       { id: 'queso_cottage', name: 'Queso Cottage', icon: '🥣', unit: 'g', baseQty: 100, cal: 98, prot: 11.0, carb: 3.4, grasa: 4.3, fibra: 0, azucar: 2.7, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'yogurt', name: 'Yogurt griego natural', icon: '🍦', unit: 'g', baseQty: 100, cal: 59, prot: 10.0, carb: 3.6, grasa: 0.4, fibra: 0, azucar: 3.6, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'leche', name: 'Leche entera / Semidescremada', icon: '🥛', unit: 'ml', baseQty: 250, cal: 130, prot: 8.5, carb: 12.0, grasa: 5.0, fibra: 0, azucar: 12, azucarLibre: false, fav: false, quick: [200, 250, 500] },
-      { id: 'avena', name: 'Avena', icon: '🥣', unit: 'g', baseQty: 100, cal: 389, prot: 16.9, carb: 66.3, grasa: 6.9, fibra: 10.6, azucar: 1, fav: false, quick: [40, 60, 80] },
-      { id: 'arroz', name: 'Arroz cocido', icon: '🍚', unit: 'g', baseQty: 100, cal: 130, prot: 2.7, carb: 28.0, grasa: 0.3, fibra: 0.4, azucar: 0.1, fav: false, quick: [100, 150, 200] },
+      { id: 'avena', name: 'Avena', icon: '🥣', unit: 'g', baseQty: 100, cal: 389, prot: 16.9, carb: 66.3, grasa: 6.9, fibra: 10.6, azucar: 1, azucarLibre: false, fav: false, quick: [40, 60, 80] },
+      { id: 'arroz', name: 'Arroz cocido', icon: '🍚', unit: 'g', baseQty: 100, cal: 130, prot: 2.7, carb: 28.0, grasa: 0.3, fibra: 0.4, azucar: 0.1, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'papas', name: 'Papas', icon: '🥔', unit: 'g', baseQty: 100, cal: 77, prot: 2.0, carb: 17.0, grasa: 0.1, fibra: 2.2, azucar: 0.8, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'camote', name: 'Camote cocido', icon: '🍠', unit: 'g', baseQty: 100, cal: 86, prot: 1.6, carb: 20.0, grasa: 0.1, fibra: 3.0, azucar: 4.2, azucarLibre: false, fav: false, quick: [100, 150, 200] },
-      { id: 'pasta', name: 'Pasta cocida', icon: '🍝', unit: 'g', baseQty: 100, cal: 131, prot: 5.0, carb: 25.0, grasa: 1.1, fibra: 1.8, azucar: 0.6, fav: false, quick: [100, 150, 200] },
+      { id: 'pasta', name: 'Pasta cocida', icon: '🍝', unit: 'g', baseQty: 100, cal: 131, prot: 5.0, carb: 25.0, grasa: 1.1, fibra: 1.8, azucar: 0.6, azucarLibre: false, fav: false, quick: [100, 150, 200] },
       { id: 'bolillo', name: 'Bolillo', icon: '🥖', unit: 'pz', baseQty: 1, cal: 183, prot: 5.7, carb: 37.0, grasa: 1.4, fibra: 1.6, azucar: 2, fav: false, quick: [0.5, 1] },
-      { id: 'cacahuates', name: 'Cacahuates', icon: '🥜', unit: 'g', baseQty: 100, cal: 567, prot: 25.8, carb: 16.1, grasa: 49.2, fibra: 8.5, azucar: 4.7, fav: false, quick: [30, 50], qualityExempt: true },
+      { id: 'cacahuates', name: 'Cacahuates', icon: '🥜', unit: 'g', baseQty: 100, cal: 567, prot: 25.8, carb: 16.1, grasa: 49.2, fibra: 8.5, azucar: 4.7, azucarLibre: false, fav: false, quick: [30, 50], qualityExempt: true },
       { id: 'crema_cacahuate', name: 'Crema de cacahuate', icon: '🍯', unit: 'g', baseQty: 30, cal: 188, prot: 8.0, carb: 6.0, grasa: 16.0, fibra: 2.0, azucar: 2.5, fav: false, quick: [15, 30], qualityExempt: true },
       { id: 'aguacate', name: 'Aguacate', icon: '🥑', unit: 'g', baseQty: 100, cal: 160, prot: 2.0, carb: 8.5, grasa: 14.7, fibra: 6.7, azucar: 0.7, azucarLibre: false, fav: false, quick: [50, 100], qualityExempt: true },
       { id: 'platano', name: 'Plátano', icon: '🍌', unit: 'pz', baseQty: 1, cal: 105, prot: 1.3, carb: 27.0, grasa: 0.3, fibra: 3.1, azucar: 14.4, azucarLibre: false, fav: false, quick: [1, 2] },
@@ -725,7 +725,7 @@
       { id: 'crema_coco_cafe', name: 'Sustituto de leche para café (crema de coco)', icon: '🥥', unit: 'ml', baseQty: 100, cal: 158, prot: 0.0, carb: 35.3, grasa: 1.8, fibra: 0.0, azucar: 30, fav: false, quick: [15, 30, 50] },
       { id: 'splenda', name: 'Splenda (sobre)', icon: '🧂', unit: 'pz', baseQty: 1, cal: 4, prot: 0.0, carb: 1.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [1, 2, 3] },
       { id: 'cereal_con_azucar', name: 'Cereal con azúcar', icon: '🥣', unit: 'g', baseQty: 100, cal: 374, prot: 4.0, carb: 87.0, grasa: 0.5, fibra: 1.5, azucar: 37, fav: false, quick: [30, 40, 50] },
-      { id: 'cereal_sin_azucar', name: 'Cereal sin azúcar', icon: '🥣', unit: 'g', baseQty: 100, cal: 357, prot: 7.0, carb: 84.0, grasa: 0.9, fibra: 3.0, azucar: 3, fav: false, quick: [30, 40, 50] },
+      { id: 'cereal_sin_azucar', name: 'Cereal sin azúcar', icon: '🥣', unit: 'g', baseQty: 100, cal: 357, prot: 7.0, carb: 84.0, grasa: 0.9, fibra: 3.0, azucar: 3, azucarLibre: false, fav: false, quick: [30, 40, 50] },
       { id: 'galletas_maria', name: 'Galletas María', icon: '🍪', unit: 'pz', baseQty: 1, cal: 24, prot: 0.4, carb: 4.1, grasa: 0.7, fibra: 0.1, azucar: 1.1, fav: false, quick: [4, 6, 10] },
       { id: 'oreo', name: 'Oreo', icon: '🍪', unit: 'pz', baseQty: 1, cal: 53, prot: 0.5, carb: 8.0, grasa: 2.3, fibra: 0.3, azucar: 5.0, fav: false, quick: [2, 3, 4] },
       { id: 'barritas_fresa', name: 'Barritas de fresa', icon: '🍓', unit: 'pz', baseQty: 1, cal: 120, prot: 1.0, carb: 20.0, grasa: 4.0, fibra: 0.5, azucar: 12.0, fav: false, quick: [1, 2] },
@@ -811,6 +811,13 @@
         if(existing && existing.azucarLibre === undefined) existing.azucarLibre = (df.azucarLibre === false) ? false : true;
       });
       data.foods.forEach(f => { if(f.azucarLibre === undefined) f.azucarLibre = true; });
+      // Corrige azucarLibre en alimentos del catálogo base que ya existían en versiones anteriores
+      // y por eso se guardaron con el valor equivocado (true/undefined) antes de esta corrección.
+      // Se fuerza siempre porque es un dato del catálogo, no una preferencia que el usuario haya elegido a mano.
+      ['huevo','frijoles','claras','lentejas','garbanzos','soya','avena','arroz','pasta','cacahuates','cereal_sin_azucar','leche_polvo'].forEach(id => {
+        const f = data.foods.find(item => item.id === id);
+        if(f) f.azucarLibre = false;
+      });
       // Corrige la unidad de alimentos que en realidad se miden por cucharada, no por "scoop"
       // (scoop se reserva para polvos con medidor propio, como proteína o leche en polvo).
       // Solo se migra si el usuario no había cambiado ya la unidad manualmente.
@@ -920,11 +927,14 @@
     };
   }
 
-  // Nutrientes de un registro ya hecho: usa la copia congelada al momento de registrarlo (entry.n).
-  // Si el registro es de antes de que existiera esta copia congelada (entradas de hoy ya guardadas
-  // en tu navegador antes de esta actualización), recalcula al vuelo como se hacía antes, para no perderlas.
+  // Nutrientes de un registro ya hecho: se recalculan SIEMPRE con los datos actuales del alimento
+  // en el catálogo (no con una copia congelada). Esto significa que si editas un alimento
+  // (por ejemplo, corriges su "azúcar libre" o sus macros), los registros de hoy y del historial
+  // que usan ese alimento se actualizan automáticamente, aunque ya los hayas registrado antes.
+  // Si el alimento fue eliminado del catálogo, se usa la última copia conocida (entry.n) como respaldo.
   function getEntryNutrients(entry, food){
-    return entry.n || foodNutrientsByQty(food, entry.qty);
+    if(food) return foodNutrientsByQty(food, entry.qty);
+    return entry.n || { cal:0, prot:0, carb:0, grasa:0, fibra:0, azucar:0, azucarLibre:0 };
   }
 
   function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
@@ -1221,8 +1231,9 @@
 
     // secName = sección a la que pertenecen estas entradas; se pasa a cada fila
     // para que su detalle solo muestre los registros de esa sección.
-    // Suma tanto la cantidad como los nutrientes YA CONGELADOS de cada registro — así, si
-    // editas el alimento después, esta lista sigue mostrando lo que se guardó al registrarlo.
+    // Suma tanto la cantidad como los nutrientes recalculados (con los datos ACTUALES del
+    // alimento) de cada registro — así, si editas el alimento después, esta lista refleja
+    // los valores más recientes, incluyendo el historial de hoy.
     function appendAggregatedRows(entries, secName){
       const aggregated = {};
       entries.forEach(e => {
@@ -1694,9 +1705,9 @@
     const section = (state.simpleMode || state.activeSection === 'todos')
       ? ((state.mealSections[0] && state.mealSections[0].name) || 'Sin sección')
       : state.activeSection;
-    // Se congela una copia de los nutrientes tal como están HOY en el catálogo. Si más adelante
-    // editas este alimento (corriges sus datos, cambias su unidad, etc.), este registro ya hecho
-    // conserva los valores con los que se guardó, en vez de recalcularse solo.
+    // Ya no se congela una copia de los nutrientes: entry.n se guarda solo como respaldo,
+    // por si en el futuro el alimento llegara a eliminarse del catálogo. Mientras el alimento
+    // exista, los totales siempre se recalculan con los datos actuales (ver getEntryNutrients).
     const n = foodNutrientsByQty(f, Number(qty));
     state.currentDayEntries.push({ id: uid(), foodId: f.id, qty: Number(qty), section, n });
     openFoodId = f.id;
