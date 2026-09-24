@@ -1056,10 +1056,18 @@
     return Math.max(0, 1 - Math.abs(value - goal) / goal);
   }
 
-  // "Mientras más, mejor" (proteína, fibra): llegar o superar la meta da el máximo puntaje.
+  // "Mientras más, mejor" (fibra, agua): llegar o superar la meta da el máximo puntaje.
   function minGoalScore(value, goal){
     if(!goal || goal <= 0) return 1;
     return Math.min(1, value / goal);
+  }
+
+  // Proteína: igual que minGoalScore hasta llegar a la meta, pero sigue dando un poco más
+  // de puntaje (bono) conforme te pasas, hasta un tope del 120% de tu meta. Pasar de ahí
+  // no suma más — evita que "solo comer proteína" infle la calificación sin límite.
+  function proteinScore(value, goal){
+    if(!goal || goal <= 0) return 1;
+    return Math.min(1.2, value / goal);
   }
 
   // "Techo con tolerancia" (carbohidratos, grasas): quedarte corto resta poco y de forma lineal,
@@ -1077,7 +1085,7 @@
 
   function dayScoreComponents(d){
     return {
-      prot: minGoalScore(d.prot, state.goals.dailyProt),
+      prot: proteinScore(d.prot, state.goals.dailyProt),
       cal: symmetricScore(d.cal, state.goals.dailyCal),
       carb: ceilingToleranceScore(d.carb, state.goals.dailyCarb),
       grasa: ceilingToleranceScore(d.grasa, state.goals.dailyGrasa),
@@ -1153,7 +1161,7 @@
   // Identifica qué nutriente te está costando más puntos (score bajo x su peso) y arma un consejo concreto
   function generateRecommendation(avgCal, pctCal, avgProt, pctProt, avgCarb, pctCarb, avgGrasa, pctGrasa, avgFibra, pctFibra){
     const comp = {
-      prot: minGoalScore(avgProt, state.goals.dailyProt),
+      prot: proteinScore(avgProt, state.goals.dailyProt),
       cal: symmetricScore(avgCal, state.goals.dailyCal),
       carb: ceilingToleranceScore(avgCarb, state.goals.dailyCarb),
       grasa: ceilingToleranceScore(avgGrasa, state.goals.dailyGrasa),
