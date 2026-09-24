@@ -76,8 +76,16 @@
   .main-stat .num.num-mes{ font-size:16px; font-weight:700; }
   .main-stat .target-text{ font-size:12.5px; font-weight:600; color:var(--ink-soft); }
 
-  .progress-bg{ width:100%; height:7px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:2px; }
-  .progress-bar{ height:100%; border-radius:4px; width:0%; transition:width 0.3s ease; }
+  .progress-bg{ width:100%; height:11px; background:var(--line); border-radius:6px; overflow:hidden; margin-top:2px; }
+  .progress-bar{ height:100%; border-radius:6px; width:0%; transition:width 0.3s ease; }
+  .progress-wrap{ position:relative; }
+  .over-badge{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-size:10px; font-weight:800; color:#fff; background:rgba(17,19,24,0.72);
+    padding:2px 9px; border-radius:10px; white-space:nowrap; display:none;
+    pointer-events:none; letter-spacing:0.02em;
+  }
+  .over-badge.show{ display:block; }
   .progress-bar.cal{ background:var(--blue); }
   .progress-bar.cal.over{ background:var(--red); }
   .progress-bar.prot{ background:var(--green); }
@@ -144,6 +152,15 @@
     letter-spacing:0.05em; margin:14px 0 6px; padding-top:10px; border-top:1px solid var(--line);
   }
   .section-header:first-child{ margin-top:0; padding-top:0; border-top:none; }
+
+  .section-totals-grid{
+    display:grid; grid-template-columns: repeat(5, 1fr);
+    background:var(--blue-soft); border-radius:12px; padding:10px 2px;
+    margin:2px 0 16px; width:100%;
+  }
+  .stot-item{ text-align:center; }
+  .stot-lbl{ font-size:10.5px; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:0.03em; }
+  .stot-val{ font-size:14px; font-weight:800; color:var(--ink); margin-top:3px; }
 
   .search-box{
     position:relative; margin-bottom:12px;
@@ -388,7 +405,10 @@
   <div class="summary-card">
     <div class="summary-header">
       <span class="summary-title">Consumo del Día Actual</span>
-      <span class="summary-days" id="valDiaNumero">Día Activo</span>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span class="summary-days" id="valDiaScore">-- / 10</span>
+        <span class="summary-days" id="valDiaNumero">Día Activo</span>
+      </div>
     </div>
     
     <div class="main-stat">
@@ -396,7 +416,10 @@
         <span class="num" id="valCalorias">0 kcal</span>
         <span class="target-text" id="targetCalorias">Meta: 0 kcal</span>
       </div>
-      <div class="progress-bg"><div class="progress-bar cal" id="barCalorias"></div></div>
+      <div class="progress-wrap">
+        <div class="progress-bg"><div class="progress-bar cal" id="barCalorias"></div></div>
+        <span class="over-badge" id="badgeCalorias">¡Te pasaste!</span>
+      </div>
     </div>
 
     <div class="main-stat">
@@ -412,7 +435,10 @@
         <span class="num" style="font-size:18px;" id="valCarbBar">0g Carb</span>
         <span class="target-text" id="targetCarbBar">Meta: 0g</span>
       </div>
-      <div class="progress-bg"><div class="progress-bar carb" id="barCarb"></div></div>
+      <div class="progress-wrap">
+        <div class="progress-bg"><div class="progress-bar carb" id="barCarb"></div></div>
+        <span class="over-badge" id="badgeCarb">¡Te pasaste!</span>
+      </div>
     </div>
 
     <div class="main-stat">
@@ -420,7 +446,10 @@
         <span class="num" style="font-size:18px;" id="valGrasa">0g Grasas</span>
         <span class="target-text" id="targetGrasa">Meta: 0g</span>
       </div>
-      <div class="progress-bg"><div class="progress-bar grasa" id="barGrasa"></div></div>
+      <div class="progress-wrap">
+        <div class="progress-bg"><div class="progress-bar grasa" id="barGrasa"></div></div>
+        <span class="over-badge" id="badgeGrasa">¡Te pasaste!</span>
+      </div>
     </div>
 
     <div class="main-stat">
@@ -436,7 +465,10 @@
         <span class="num" style="font-size:18px;" id="valAzucarLibre">0g Azúcar</span>
         <span class="target-text" id="targetAzucarLibre">Límite: 0g</span>
       </div>
-      <div class="progress-bg"><div class="progress-bar azucar" id="barAzucarLibre"></div></div>
+      <div class="progress-wrap">
+        <div class="progress-bg"><div class="progress-bar azucar" id="barAzucarLibre"></div></div>
+        <span class="over-badge" id="badgeAzucarLibre">¡Te pasaste!</span>
+      </div>
     </div>
   </div>
 
@@ -476,7 +508,6 @@
     <button id="btnAddMeal">+ Agregar sección</button>
   </div>
   <div class="meal-tabs" id="mealTabs"></div>
-  <p class="field-hint" id="mealSectionHint" style="margin:-8px 0 14px;">Desmarca una sección para planear tu día completo sin que cuente todavía en tus totales de arriba.</p>
 
   <!-- SECCIÓN 1: Consumidos HOY -->
   <div class="section-title">
@@ -731,6 +762,53 @@
       { id: 'chococrispis', name: 'Chococrispis', icon: '🥣', unit: 'g', baseQty: 100, cal: 383, prot: 5.6, carb: 86.0, grasa: 1.8, fibra: 1.0, azucar: 35, fav: false, quick: [30, 40, 50] },
       { id: 'chocolate_abuelita', name: 'Chocolate Abuelita con leche', icon: '☕', unit: 'ml', baseQty: 300, cal: 207, prot: 10.4, carb: 32.5, grasa: 4.0, fibra: 0.0, azucar: 27, fav: false, quick: [200, 300, 400] },
       { id: 'atole_maicena', name: 'Atole de maicena', icon: '🥛', unit: 'ml', baseQty: 300, cal: 250, prot: 5.0, carb: 49.0, grasa: 4.5, fibra: 0.3, azucar: 30, fav: false, quick: [200, 300, 400] },
+      { id: 'enchiladas', name: 'Enchiladas (con carne y queso)', icon: '🌯', unit: 'pz', baseQty: 1, cal: 212, prot: 10.5, carb: 16.6, grasa: 11.9, fibra: 1.0, azucar: 1.5, fav: false, quick: [1, 2, 3] },
+      { id: 'chilaquiles', name: 'Chilaquiles', icon: '🍳', unit: 'g', baseQty: 230, cal: 443, prot: 9.7, carb: 31.9, grasa: 32.0, fibra: 2.0, azucar: 2, fav: false, quick: [230, 300] },
+      { id: 'sopes', name: 'Sopes', icon: '🫓', unit: 'pz', baseQty: 1, cal: 150, prot: 5.0, carb: 15.0, grasa: 8.0, fibra: 1.5, azucar: 1, azucarLibre: false, fav: false, quick: [1, 2, 3] },
+      { id: 'gorditas', name: 'Gorditas', icon: '🫓', unit: 'pz', baseQty: 1, cal: 250, prot: 8.0, carb: 25.0, grasa: 13.0, fibra: 2.0, azucar: 1, azucarLibre: false, fav: false, quick: [1, 2] },
+      { id: 'flautas', name: 'Flautas', icon: '🌯', unit: 'pz', baseQty: 1, cal: 180, prot: 6.0, carb: 15.0, grasa: 11.0, fibra: 0.5, azucar: 0.5, fav: false, quick: [1, 2, 3] },
+      { id: 'taco_bistec', name: 'Taco de bistec', icon: '🌮', unit: 'pz', baseQty: 1, cal: 270, prot: 14.2, carb: 20.7, grasa: 14.5, fibra: 1.0, azucar: 1.5, azucarLibre: false, fav: false, quick: [1, 2, 3, 4] },
+      { id: 'taco_pescado', name: 'Taco de pescado', icon: '🌮', unit: 'pz', baseQty: 1, cal: 180, prot: 8.0, carb: 15.0, grasa: 10.0, fibra: 1.0, azucar: 1, azucarLibre: false, fav: false, quick: [1, 2, 3] },
+      { id: 'taco_camaron', name: 'Taco de camarón', icon: '🌮', unit: 'pz', baseQty: 1, cal: 150, prot: 9.0, carb: 13.0, grasa: 7.0, fibra: 0.5, azucar: 1, azucarLibre: false, fav: false, quick: [1, 2, 3] },
+      { id: 'birria', name: 'Birria (con caldo)', icon: '🍲', unit: 'g', baseQty: 300, cal: 350, prot: 25.0, carb: 10.0, grasa: 22.0, fibra: 1.0, azucar: 1, azucarLibre: false, fav: false, quick: [300, 400] },
+      { id: 'taco_barbacoa', name: 'Taco de barbacoa', icon: '🌮', unit: 'pz', baseQty: 1, cal: 196, prot: 9.8, carb: 16.2, grasa: 10.2, fibra: 1.0, azucar: 1, azucarLibre: false, fav: false, quick: [1, 2, 3] },
+      { id: 'menudo', name: 'Menudo', icon: '🍲', unit: 'g', baseQty: 300, cal: 220, prot: 16.0, carb: 10.0, grasa: 13.0, fibra: 1.0, azucar: 0.5, azucarLibre: false, fav: false, quick: [300, 400] },
+      { id: 'hamburguesa', name: 'Hamburguesa (con queso)', icon: '🍔', unit: 'pz', baseQty: 1, cal: 420, prot: 22.0, carb: 32.0, grasa: 22.0, fibra: 2.0, azucar: 6, fav: false, quick: [1] },
+      { id: 'hot_dog', name: 'Hot dog', icon: '🌭', unit: 'pz', baseQty: 1, cal: 290, prot: 10.0, carb: 28.0, grasa: 16.0, fibra: 1.0, azucar: 5, fav: false, quick: [1, 2] },
+      { id: 'nuggets', name: 'Nuggets de pollo', icon: '🍗', unit: 'pz', baseQty: 1, cal: 50, prot: 3.0, carb: 4.0, grasa: 3.0, fibra: 0.2, azucar: 0.3, fav: false, quick: [4, 6, 10] },
+      { id: 'huevos_rancheros', name: 'Huevos rancheros', icon: '🍳', unit: 'pz', baseQty: 1, cal: 280, prot: 16.0, carb: 20.0, grasa: 16.0, fibra: 3.0, azucar: 2, azucarLibre: false, fav: false, quick: [1] },
+      { id: 'huevo_jamon', name: 'Huevo con jamón (revuelto)', icon: '🍳', unit: 'g', baseQty: 150, cal: 220, prot: 18.0, carb: 2.0, grasa: 16.0, fibra: 0.0, azucar: 0.5, fav: false, quick: [150, 200] },
+      { id: 'concha', name: 'Concha', icon: '🥐', unit: 'pz', baseQty: 1, cal: 300, prot: 6.0, carb: 45.0, grasa: 11.0, fibra: 1.5, azucar: 15, fav: false, quick: [1] },
+      { id: 'cuernito', name: 'Cuernito', icon: '🥐', unit: 'pz', baseQty: 1, cal: 230, prot: 5.0, carb: 26.0, grasa: 12.0, fibra: 1.0, azucar: 5, fav: false, quick: [1] },
+      { id: 'licuado_platano', name: 'Licuado de plátano', icon: '🥤', unit: 'ml', baseQty: 300, cal: 220, prot: 8.0, carb: 35.0, grasa: 6.0, fibra: 2.0, azucar: 25, azucarLibre: false, fav: false, quick: [250, 300, 400] },
+      { id: 'agua_jamaica', name: 'Agua de jamaica', icon: '🥤', unit: 'ml', baseQty: 300, cal: 90, prot: 0.0, carb: 23.0, grasa: 0.0, fibra: 0.0, azucar: 22, fav: false, quick: [250, 300, 400] },
+      { id: 'horchata', name: 'Horchata', icon: '🥤', unit: 'ml', baseQty: 300, cal: 150, prot: 1.0, carb: 32.0, grasa: 2.0, fibra: 0.3, azucar: 28, fav: false, quick: [250, 300, 400] },
+      { id: 'agua_limon', name: 'Agua de limón', icon: '🥤', unit: 'ml', baseQty: 300, cal: 80, prot: 0.0, carb: 20.0, grasa: 0.0, fibra: 0.2, azucar: 19, fav: false, quick: [250, 300, 400] },
+      { id: 'cafe_olla', name: 'Café de olla', icon: '☕', unit: 'ml', baseQty: 250, cal: 70, prot: 0.3, carb: 17.0, grasa: 0.0, fibra: 0.0, azucar: 15, fav: false, quick: [200, 250, 350] },
+      { id: 'cafe_leche', name: 'Café con leche', icon: '☕', unit: 'ml', baseQty: 250, cal: 90, prot: 4.0, carb: 8.0, grasa: 4.0, fibra: 0.0, azucar: 8, azucarLibre: false, fav: false, quick: [200, 250, 350] },
+      { id: 'jugo_naranja', name: 'Jugo de naranja natural', icon: '🥤', unit: 'ml', baseQty: 250, cal: 110, prot: 1.7, carb: 26.0, grasa: 0.5, fibra: 0.5, azucar: 21, fav: false, quick: [200, 250, 350] },
+      { id: 'leche_almendra', name: 'Leche de almendra (sin azúcar)', icon: '🥛', unit: 'ml', baseQty: 250, cal: 40, prot: 1.0, carb: 2.0, grasa: 3.0, fibra: 0.5, azucar: 0, azucarLibre: false, fav: false, quick: [200, 250, 350] },
+      { id: 'leche_avena', name: 'Leche de avena', icon: '🥛', unit: 'ml', baseQty: 250, cal: 120, prot: 3.0, carb: 16.0, grasa: 5.0, fibra: 2.0, azucar: 7, fav: false, quick: [200, 250, 350] },
+      { id: 'pina', name: 'Piña', icon: '🍍', unit: 'g', baseQty: 100, cal: 50, prot: 0.5, carb: 13.0, grasa: 0.1, fibra: 1.4, azucar: 10, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'kiwi', name: 'Kiwi', icon: '🥝', unit: 'pz', baseQty: 1, cal: 42, prot: 0.8, carb: 10.0, grasa: 0.4, fibra: 2.0, azucar: 6, azucarLibre: false, fav: false, quick: [1, 2] },
+      { id: 'coco', name: 'Coco', icon: '🥥', unit: 'g', baseQty: 100, cal: 354, prot: 3.3, carb: 15.0, grasa: 33.0, fibra: 9.0, azucar: 6, azucarLibre: false, fav: false, quick: [30, 50, 100] },
+      { id: 'brocoli', name: 'Brócoli', icon: '🥦', unit: 'g', baseQty: 100, cal: 34, prot: 2.8, carb: 7.0, grasa: 0.4, fibra: 2.6, azucar: 1.7, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'coliflor', name: 'Coliflor', icon: '🥦', unit: 'g', baseQty: 100, cal: 25, prot: 1.9, carb: 5.0, grasa: 0.3, fibra: 2.0, azucar: 1.9, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'espinaca', name: 'Espinaca', icon: '🥬', unit: 'g', baseQty: 100, cal: 23, prot: 2.9, carb: 3.6, grasa: 0.4, fibra: 2.2, azucar: 0.4, azucarLibre: false, fav: false, quick: [50, 100, 150] },
+      { id: 'zanahoria', name: 'Zanahoria', icon: '🥕', unit: 'g', baseQty: 100, cal: 41, prot: 0.9, carb: 10.0, grasa: 0.2, fibra: 2.8, azucar: 4.7, azucarLibre: false, fav: false, quick: [50, 100, 150] },
+      { id: 'pepino', name: 'Pepino', icon: '🥒', unit: 'g', baseQty: 100, cal: 15, prot: 0.7, carb: 3.6, grasa: 0.1, fibra: 0.5, azucar: 1.7, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'champinones', name: 'Champiñones', icon: '🍄', unit: 'g', baseQty: 100, cal: 22, prot: 3.1, carb: 3.3, grasa: 0.3, fibra: 1.0, azucar: 2, azucarLibre: false, fav: false, quick: [100, 150, 200] },
+      { id: 'gansito', name: 'Gansito', icon: '🍫', unit: 'pz', baseQty: 1, cal: 190, prot: 2.0, carb: 28.0, grasa: 8.0, fibra: 0.5, azucar: 18, fav: false, quick: [1, 2] },
+      { id: 'pinguinos', name: 'Pingüinos', icon: '🐧', unit: 'pz', baseQty: 1, cal: 150, prot: 2.0, carb: 20.0, grasa: 7.0, fibra: 0.5, azucar: 14, fav: false, quick: [1, 2] },
+      { id: 'mamut', name: 'Mamut', icon: '🍪', unit: 'pz', baseQty: 1, cal: 260, prot: 4.0, carb: 40.0, grasa: 9.0, fibra: 1.0, azucar: 18, fav: false, quick: [1] },
+      { id: 'paleta_hielo', name: 'Paleta de hielo', icon: '🧊', unit: 'pz', baseQty: 1, cal: 80, prot: 0.0, carb: 20.0, grasa: 0.0, fibra: 0.0, azucar: 18, fav: false, quick: [1, 2] },
+      { id: 'nieve', name: 'Nieve (agua)', icon: '🍧', unit: 'g', baseQty: 100, cal: 130, prot: 0.5, carb: 32.0, grasa: 0.2, fibra: 0.3, azucar: 28, fav: false, quick: [100, 150, 200] },
+      { id: 'helado', name: 'Helado', icon: '🍨', unit: 'g', baseQty: 100, cal: 207, prot: 3.5, carb: 24.0, grasa: 11.0, fibra: 0.5, azucar: 21, fav: false, quick: [50, 100, 150] },
+      { id: 'flan', name: 'Flan', icon: '🍮', unit: 'pz', baseQty: 1, cal: 220, prot: 6.0, carb: 30.0, grasa: 8.0, fibra: 0.0, azucar: 28, fav: false, quick: [1] },
+      { id: 'pay', name: 'Pay (rebanada)', icon: '🥧', unit: 'pz', baseQty: 1, cal: 320, prot: 5.0, carb: 30.0, grasa: 20.0, fibra: 1.0, azucar: 20, fav: false, quick: [1] },
+      { id: 'camaron', name: 'Camarón', icon: '🍤', unit: 'g', baseQty: 100, cal: 99, prot: 24.0, carb: 0.2, grasa: 0.3, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'atun_fresco', name: 'Atún fresco (cocido)', icon: '🐟', unit: 'g', baseQty: 100, cal: 184, prot: 30.0, carb: 0.0, grasa: 6.3, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
+      { id: 'pavo', name: 'Pavo (pechuga cocida)', icon: '🍗', unit: 'g', baseQty: 100, cal: 135, prot: 30.0, carb: 0.0, grasa: 1.0, fibra: 0.0, azucar: 0, fav: false, quick: [100, 150, 200] },
       { id: 'yogurt_bebible', name: 'Yogurt bebible dulce', icon: '🥤', unit: 'ml', baseQty: 100, cal: 85, prot: 2.5, carb: 14.0, grasa: 2.0, fibra: 0.0, azucar: 13, fav: false, quick: [200, 250, 500] },
       { id: 'maicena', name: 'Maicena (cucharada)', icon: '🥄', unit: 'cda', baseQty: 1, cal: 29, prot: 0.0, carb: 7.0, grasa: 0.0, fibra: 0.0, azucar: 0, fav: false, quick: [1, 2, 3] },
       { id: 'arroz_leche', name: 'Arroz con leche', icon: '🍚', unit: 'g', baseQty: 100, cal: 120, prot: 3.0, carb: 22.0, grasa: 2.5, fibra: 0.3, azucar: 14, fav: false, quick: [100, 150, 200] },
@@ -1162,11 +1240,46 @@
     return density < QUALITY_ALERT_MAX_DENSITY;
   }
 
-  // Determina si una entrada cuenta hacia el total del día: cuenta si su sección
-  // está activa (check marcado), o si la sección ya no existe (huérfana, cuenta siempre).
+  // Todas las entradas cuentan hacia el total del día: ya no existe el checkbox
+  // para desmarcar una sección, así que toda comida registrada siempre suma.
   function isEntrySectionActive(entry){
-    const sec = state.mealSections.find(s => s.name === entry.section);
-    return !sec || sec.active !== false;
+    return true;
+  }
+
+  // Suma los nutrientes actuales (recalculados con los datos vigentes del alimento) de un
+  // conjunto de registros — se usa para mostrar el total por sección al fondo de cada comida.
+  function sumEntriesNutrients(entries){
+    const total = { cal: 0, prot: 0, carb: 0, grasa: 0, fibra: 0 };
+    entries.forEach(e => {
+      const food = state.foods.find(f => f.id === e.foodId);
+      if(!food) return;
+      const n = getEntryNutrients(e, food);
+      total.cal += n.cal; total.prot += n.prot; total.carb += n.carb;
+      total.grasa += n.grasa; total.fibra += n.fibra;
+    });
+    return total;
+  }
+
+  // Total de la sección (Cal, P, C, G, F) como una fila de celdas centradas, ancho completo,
+  // al fondo de cada comida.
+  function renderSectionTotals(entries){
+    const t = sumEntriesNutrients(entries);
+    const div = document.createElement('div');
+    div.className = 'section-totals-grid';
+    const cells = [
+      { lbl: '🔥 Cal', val: Math.round(t.cal), color: 'var(--blue)' },
+      { lbl: '🥩 P', val: `${Math.round(t.prot)}g`, color: 'var(--green)' },
+      { lbl: '🌾 C', val: `${Math.round(t.carb)}g`, color: 'var(--gold)' },
+      { lbl: '🥑 G', val: `${Math.round(t.grasa)}g`, color: '#8B5CF6' },
+      { lbl: '🌿 F', val: `${Math.round(t.fibra)}g`, color: '#0EA5A0' }
+    ];
+    div.innerHTML = cells.map(c => `
+      <div class="stot-item">
+        <div class="stot-lbl" style="color:${c.color};">${c.lbl}</div>
+        <div class="stot-val">${c.val}</div>
+      </div>
+    `).join('');
+    return div;
   }
 
   function registerAgua(qty){
@@ -1195,18 +1308,6 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'meal-tab' + (state.activeSection === sec.name ? ' active' : '');
-
-      const check = document.createElement('input');
-      check.type = 'checkbox';
-      check.className = 'meal-tab-check';
-      check.checked = sec.active !== false;
-      check.title = 'Cuenta en el total del día';
-      check.addEventListener('click', (e) => e.stopPropagation());
-      check.addEventListener('change', () => {
-        sec.active = check.checked;
-        save(); render();
-      });
-      btn.appendChild(check);
 
       const labelSpan = document.createElement('span');
       labelSpan.textContent = sec.name;
@@ -1282,13 +1383,12 @@
         const entries = state.currentDayEntries.filter(e => (e.section || 'Sin sección') === secName);
         if(entries.length === 0) return;
         anyShown = true;
-        const secObj = state.mealSections.find(s => s.name === secName);
         const header = document.createElement('div');
         header.className = 'section-header';
-        header.textContent = (secObj && secObj.active === false) ? `${secName} (no cuenta en el total)` : secName;
-        if(secObj && secObj.active === false) header.style.opacity = '0.6';
+        header.textContent = secName;
         consumedList.appendChild(header);
         appendAggregatedRows(entries, secName);
+        consumedList.appendChild(renderSectionTotals(entries));
       });
       if(!anyShown){
         consumedList.innerHTML = `<div class="empty-consumed">Aún no has registrado ningún alimento hoy.</div>`;
@@ -1299,15 +1399,8 @@
         consumedList.innerHTML = `<div class="empty-consumed">Nada registrado en "${escapeHtml(state.activeSection)}" todavía.</div>`;
         return;
       }
-      const secObj = state.mealSections.find(s => s.name === state.activeSection);
-      if(secObj && secObj.active === false){
-        const note = document.createElement('div');
-        note.className = 'field-hint';
-        note.style.marginBottom = '8px';
-        note.textContent = 'Esta sección está desmarcada: no suma a tu total de hoy todavía.';
-        consumedList.appendChild(note);
-      }
       appendAggregatedRows(entries, state.activeSection);
+      consumedList.appendChild(renderSectionTotals(entries));
     }
   }
 
@@ -1332,11 +1425,21 @@
       }
     });
 
+    // Calificación del día en curso: misma fórmula ponderada que usan los días cerrados,
+    // para que puedas ver cómo vas antes de cerrar el día.
+    const todayScore = (dayWeightedScore({ prot: todayProt, cal: todayCal, carb: todayCarb, grasa: todayGrasa, fibra: todayFibra }) * 10).toFixed(1);
+    document.getElementById('valDiaScore').textContent = `${todayScore} / 10`;
+
+
     document.getElementById('valCalorias').textContent = `${Math.round(todayCal).toLocaleString('es-MX')} kcal`;
     document.getElementById('targetCalorias').textContent = `Meta: ${state.goals.dailyCal} kcal`;
     const barCal = document.getElementById('barCalorias');
     barCal.style.width = (Math.min(100, Math.round((todayCal / state.goals.dailyCal) * 100)) || 0) + '%';
-    barCal.classList.toggle('over', todayCal > state.goals.dailyCal);
+    const overCal = todayCal > state.goals.dailyCal;
+    barCal.classList.toggle('over', overCal);
+    const badgeCal = document.getElementById('badgeCalorias');
+    badgeCal.textContent = `¡Te pasaste! +${Math.round(todayCal - state.goals.dailyCal)} kcal`;
+    badgeCal.classList.toggle('show', overCal);
 
     document.getElementById('valProtBar').textContent = `${Math.round(todayProt)}g Prot`;
     document.getElementById('targetProtBar').textContent = `Meta: ${state.goals.dailyProt}g`;
@@ -1345,12 +1448,22 @@
     document.getElementById('valCarbBar').textContent = `${Math.round(todayCarb)}g Carb`;
     document.getElementById('targetCarbBar').textContent = `Meta: ${state.goals.dailyCarb}g`;
     document.getElementById('barCarb').style.width = (Math.min(100, Math.round((todayCarb / state.goals.dailyCarb) * 100)) || 0) + '%';
+    const barCarbDia = document.getElementById('barCarb');
+    const overCarb = todayCarb > state.goals.dailyCarb;
+    barCarbDia.classList.toggle('over', overCarb);
+    const badgeCarb = document.getElementById('badgeCarb');
+    badgeCarb.textContent = `¡Te pasaste! +${Math.round(todayCarb - state.goals.dailyCarb)}g`;
+    badgeCarb.classList.toggle('show', overCarb);
 
     document.getElementById('valGrasa').textContent = `${Math.round(todayGrasa)}g Grasas`;
     document.getElementById('targetGrasa').textContent = `Meta: ${state.goals.dailyGrasa}g`;
     const barGrasaDia = document.getElementById('barGrasa');
     barGrasaDia.style.width = (Math.min(100, Math.round((todayGrasa / state.goals.dailyGrasa) * 100)) || 0) + '%';
-    barGrasaDia.classList.toggle('over', todayGrasa > state.goals.dailyGrasa);
+    const overGrasa = todayGrasa > state.goals.dailyGrasa;
+    barGrasaDia.classList.toggle('over', overGrasa);
+    const badgeGrasa = document.getElementById('badgeGrasa');
+    badgeGrasa.textContent = `¡Te pasaste! +${Math.round(todayGrasa - state.goals.dailyGrasa)}g`;
+    badgeGrasa.classList.toggle('show', overGrasa);
 
     document.getElementById('valFibra').textContent = `${Math.round(todayFibra)}g Fibra`;
     document.getElementById('targetFibra').textContent = `Meta: ${state.goals.dailyFibra}g`;
@@ -1360,7 +1473,11 @@
     document.getElementById('targetAzucarLibre').textContent = `Límite: ${state.goals.dailyAzucar}g`;
     const barAzucarDia = document.getElementById('barAzucarLibre');
     barAzucarDia.style.width = (Math.min(100, Math.round((todayAzucarLibre / state.goals.dailyAzucar) * 100)) || 0) + '%';
-    barAzucarDia.classList.toggle('over', todayAzucarLibre > state.goals.dailyAzucar);
+    const overAzucar = todayAzucarLibre > state.goals.dailyAzucar;
+    barAzucarDia.classList.toggle('over', overAzucar);
+    const badgeAzucar = document.getElementById('badgeAzucarLibre');
+    badgeAzucar.textContent = `¡Te pasaste! +${Math.round(todayAzucarLibre - state.goals.dailyAzucar)}g`;
+    badgeAzucar.classList.toggle('show', overAzucar);
 
 
     // Hidratación del día (aparte del resto de nutrientes)
@@ -1517,7 +1634,6 @@
 
     document.getElementById('btnSimpleMode').textContent = state.simpleMode ? '📋 Modo Detallado' : '🧩 Modo Simple';
     document.getElementById('mealSectionTitleRow').style.display = state.simpleMode ? 'none' : 'flex';
-    document.getElementById('mealSectionHint').style.display = state.simpleMode ? 'none' : 'block';
     document.getElementById('mealTabs').style.display = state.simpleMode ? 'none' : 'flex';
 
     document.getElementById('waterToggleArrow').textContent = waterListOpen ? '▾' : '▸';
@@ -1759,11 +1875,6 @@
   document.getElementById('btnCloseDay').addEventListener('click', () => {
     if (state.currentDayEntries.length === 0) {
       if (!confirm('No has registrado ningún alimento el día de hoy. ¿Deseas cerrar el día con 0 calorías?')) return;
-    }
-
-    const inactiveWithEntries = state.currentDayEntries.some(e => !isEntrySectionActive(e));
-    if(inactiveWithEntries){
-      if(!confirm('Tienes alimentos en secciones desmarcadas (planeados pero no marcados como consumidos). No se incluirán en el total de este día. ¿Quieres cerrar el día de todas formas?')) return;
     }
 
     let dayCal = 0, dayProt = 0, dayCarb = 0, dayGrasa = 0, dayFibra = 0, dayAzucar = 0, dayAzucarLibre = 0;
